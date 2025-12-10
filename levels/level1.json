@@ -1,0 +1,36 @@
+{
+  "id": "level-1",
+  "name": "基础 4x4",
+  "layout": [
+    [0, 1, 1, 1],
+    [1, 0, 1, 1],
+    [1, 1, 0, 1],
+    [1, 1, 1, 0]
+  ],
+  "pieces": [
+    { "id": "A", "label": "A", "color": "#fbbf24" },
+    { "id": "B", "label": "B", "color": "#60a5fa" },
+    { "id": "C", "label": "C", "color": "#f472b6" }
+  ],
+  "hand": [
+    "A", "B", "C",
+    "A", "B", "C",
+    "A", "B", "C",
+    "A", "B", "C"
+  ],
+  "preset": [
+    { "row": 0, "col": 1, "pieceId": "A" },
+    { "row": 2, "col": 3, "pieceId": "B" }
+  ],
+  "rules": {
+    "matchGroups": [
+      {
+        "id": "unique-ABC",
+        "type": "unique-set",
+        "required": ["A", "B", "C"]
+      }
+    ],
+    "rowGroup": "unique-ABC",
+    "colGroup": "unique-ABC"
+  }
+}
