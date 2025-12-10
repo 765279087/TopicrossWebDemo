@@ -1,0 +1,40 @@
+{
+  "id": "level-2",
+  "name": "升级 5x5",
+  "layout": [
+    [0, 1, 1, 1, 1],
+    [1, 0, 1, 1, 1],
+    [1, 1, 0, 1, 1],
+    [1, 1, 1, 0, 1],
+    [1, 1, 1, 1, 0]
+  ],
+  "pieces": [
+    { "id": "1", "label": "1", "color": "#facc15" },
+    { "id": "2", "label": "2", "color": "#38bdf8" },
+    { "id": "3", "label": "3", "color": "#fb7185" },
+    { "id": "4", "label": "4", "color": "#a78bfa" }
+  ],
+  "hand": [
+    "1", "2", "3", "4",
+    "1", "2", "3", "4",
+    "1", "2", "3", "4",
+    "1", "2", "3", "4",
+    "1", "2", "3", "4"
+  ],
+  "preset": [
+    { "row": 0, "col": 2, "pieceId": "3" },
+    { "row": 3, "col": 4, "pieceId": "1" },
+    { "row": 4, "col": 1, "pieceId": "4" }
+  ],
+  "rules": {
+    "matchGroups": [
+      {
+        "id": "unique-1234",
+        "type": "unique-set",
+        "required": ["1", "2", "3", "4"]
+      }
+    ],
+    "rowGroup": "unique-1234",
+    "colGroup": "unique-1234"
+  }
+}
