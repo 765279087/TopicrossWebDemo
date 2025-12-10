@@ -7,30 +7,20 @@
     [1, 1, 0, 1],
     [1, 1, 1, 0]
   ],
-  "pieces": [
-    { "id": "A", "label": "A", "color": "#fbbf24" },
-    { "id": "B", "label": "B", "color": "#60a5fa" },
-    { "id": "C", "label": "C", "color": "#f472b6" }
-  ],
-  "hand": [
-    "A", "B", "C",
-    "A", "B", "C",
-    "A", "B", "C",
-    "A", "B", "C"
-  ],
+  "types": ["fruit", "animal", "shape"],
   "preset": [
-    { "row": 0, "col": 1, "pieceId": "A" },
-    { "row": 2, "col": 3, "pieceId": "B" }
+    { "row": 0, "col": 1, "type": "fruit" },
+    { "row": 2, "col": 3, "type": "animal" }
   ],
   "rules": {
     "matchGroups": [
       {
-        "id": "unique-ABC",
+        "id": "unique-types",
         "type": "unique-set",
-        "required": ["A", "B", "C"]
+        "required": ["fruit", "animal", "shape"]
       }
     ],
-    "rowGroup": "unique-ABC",
-    "colGroup": "unique-ABC"
+    "rowGroup": "unique-types",
+    "colGroup": "unique-types"
   }
 }

@@ -1,0 +1,27 @@
+{
+  "破碎": ["Image/1.png", "Image/2.png", "Image/3.png", "Image/4.png"],
+  "窗户": ["Image/1.png", "Image/5.png", "Image/6.png"],
+  "中东风格": ["Image/6.png", "Image/7.png", "Image/8.png", "Image/9.png"],
+  "超市": ["Image/11.png", "Image/12.png", "Image/13.png"],
+  "字符": [
+    "Image/13.png",
+    "Image/14.png",
+    "Image/15.png"
+  ],
+  "运动": [
+    "Image/16.png",
+    "Image/17.png",
+    "Image/18.png",
+    "Image/19.png"
+  ],
+  "瓶子": [
+    "Image/19.png",
+    "Image/20.png",
+    "Image/21.png"
+  ],
+  "水果": [
+    "Image/8.png",
+    "Image/10.png",
+    "Image/11.png"
+  ]
+}
