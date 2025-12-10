@@ -6,6 +6,7 @@ const levelSelect = document.getElementById("level-select");
 
 const state = {
   levels: [],
+  imageMap: {},
   level: null,
   board: [],
   boardSize: { rows: 0, cols: 0 },
@@ -25,6 +26,7 @@ const dragState = {
 init();
 
 async function init() {
+  await loadImageMap();
   await loadLevelList();
   const first = state.levels[0];
   if (first) {
@@ -56,6 +58,18 @@ async function loadLevelList() {
   }
 }
 
+async function loadImageMap() {
+  try {
+    const res = await fetch("Image/image-map.json");
+    const data = await res.json();
+    state.imageMap = data || {};
+  } catch (err) {
+    console.error(err);
+    state.imageMap = {};
+    statusEl.textContent = "图片映射加载失败";
+  }
+}
+
 async function loadLevel(levelId) {
   const meta = state.levels.find((l) => l.id === levelId);
   if (!meta) return;
@@ -72,7 +86,7 @@ async function loadLevel(levelId) {
 }
 
 function prepareLevel(level) {
-  state.piecesById = Object.fromEntries(level.pieces.map((p) => [p.id, p]));
+  state.piecesById = buildPiecesFromTypes(level.types || []);
   state.matchGroupById = Object.fromEntries(
     (level.rules?.matchGroups || []).map((g) => [g.id, g])
   );
@@ -102,20 +116,22 @@ function applyPreset(level) {
       return;
     }
     if (isBlocked(item.row, item.col)) return;
-    state.board[item.row][item.col] = item.pieceId;
+    const pid = item._pieceId || takeOneFromType(item.type);
+    if (pid) state.board[item.row][item.col] = pid;
   });
 }
 
 function buildHand(level) {
-  const counts = {};
-  level.hand.forEach((pid) => {
-    counts[pid] = (counts[pid] || 0) + 1;
-  });
+  const ids = Object.keys(state.piecesById);
+  state.hand = [...ids];
+  // 预置占用的从手牌移除
   (level.preset || []).forEach((preset) => {
-    if (counts[preset.pieceId]) counts[preset.pieceId] -= 1;
+    const pid = takeOneFromType(preset.type);
+    if (pid) {
+      preset._pieceId = pid;
+      state.board[preset.row][preset.col] = pid;
+    }
   });
-  state.hand = Object.entries(counts)
-    .flatMap(([pid, num]) => Array.from({ length: Math.max(0, num) }, () => pid));
 }
 
 function renderBoard() {
@@ -191,8 +207,10 @@ function createPiece(pieceId, source, meta) {
   const el = document.createElement("div");
   el.className = "piece";
   el.draggable = !isPreset(meta?.row, meta?.col);
-  el.textContent = piece.label;
-  el.style.background = piece.color;
+  const img = document.createElement("img");
+  img.src = piece.src;
+  img.alt = piece.type;
+  el.appendChild(img);
 
   el.addEventListener("dragstart", (e) => {
     if (!el.draggable) {
@@ -321,6 +339,27 @@ function buildBlockedSet(level, size) {
   return new Set((level.blocked || []).map((b) => `${b.row},${b.col}`));
 }
 
+function buildPiecesFromTypes(types) {
+  const map = {};
+  types.forEach((t) => {
+    const list = state.imageMap[t] || [];
+    list.forEach((src, idx) => {
+      const id = `${t}::${idx}`;
+      map[id] = { id, type: t, src };
+    });
+  });
+  return map;
+}
+
+function takeOneFromType(type) {
+  const idx = state.hand.findIndex((pid) => state.piecesById[pid]?.type === type);
+  if (idx >= 0) {
+    const [pid] = state.hand.splice(idx, 1);
+    return pid;
+  }
+  return null;
+}
+
 function isPreset(row, col) {
   return (state.level.preset || []).some((p) => p.row === row && p.col === col);
 }
@@ -398,8 +437,10 @@ function validateLines(kind, group) {
 
 function validateUniqueSet(line, required) {
   if (line.some((cell) => !cell)) return false;
-  if (line.length !== required.length) return false;
-  const set = new Set(line);
+  const types = line.map((pid) => state.piecesById[pid]?.type).filter(Boolean);
+  if (types.length !== line.length) return false;
+  if (types.length !== required.length) return false;
+  const set = new Set(types);
   if (set.size !== required.length) return false;
-  return required.every((pid) => set.has(pid));
+  return required.every((t) => set.has(t));
 }
