@@ -15,6 +15,8 @@ const state = {
   piecesById: {},
   ruleGrid: [],
   blocked: new Set(),
+  segments: [], // 存储所有行/列片段
+  cellStatus: [], // 存储每个格子的状态: 'none', 'partial', 'correct'
 };
 
 const dragState = {
@@ -98,9 +100,14 @@ function prepareLevel(level) {
   state.board = Array.from({ length: size.rows }, () =>
     Array.from({ length: size.cols }, () => null)
   );
+  state.cellStatus = Array.from({ length: size.rows }, () =>
+    Array.from({ length: size.cols }, () => "none")
+  );
 
+  buildSegments(size);
   buildHand(level);
   applyPreset(level);
+  updateBoardStatus(); // 初始化状态
   renderThemes();
   updateResponsiveSizes();
   renderBoard();
@@ -167,7 +174,15 @@ function renderBoard() {
     for (let c = 0; c < cols; c += 1) {
       const cell = document.createElement("div");
       const blocked = isBlocked(r, c);
-      cell.className = blocked ? "cell blocked" : "cell";
+      let className = "cell";
+      if (blocked) {
+        className += " blocked";
+      } else {
+        const status = state.cellStatus[r][c];
+        if (status === "correct") className += " correct";
+        else if (status === "partial") className += " partial";
+      }
+      cell.className = className;
       cell.dataset.row = r;
       cell.dataset.col = c;
       cell.dataset.occupied = Boolean(state.board[r][c]);
@@ -217,6 +232,7 @@ function renderHand() {
       e.preventDefault();
       removeFromBoard(dragState.fromCell.row, dragState.fromCell.col);
       addToHand(dragState.pieceId);
+      updateBoardStatus();
       renderBoard();
       renderHand();
       checkWin();
@@ -231,7 +247,12 @@ function createPiece(pieceId, source, meta) {
   const piece = state.piecesById[pieceId];
   const el = document.createElement("div");
   el.className = "piece";
-  el.draggable = !isPreset(meta?.row, meta?.col);
+  
+  // 检查是否为 Correct 状态，如果是，则不可拖动
+  const isLocked = isPreset(meta?.row, meta?.col) || 
+                  (source === "board" && state.cellStatus[meta.row][meta.col] === "correct");
+  
+  el.draggable = !isLocked;
   const img = document.createElement("img");
   img.src = piece.src;
   img.alt = Array.isArray(piece.types) ? piece.types.join("/") : piece.type;
@@ -288,6 +309,7 @@ function placeFromHand(row, col, pieceId, element) {
   }
   state.board[row][col] = pieceId;
   removeHandElement(element);
+  updateBoardStatus();
   renderBoard();
   renderHand();
   checkWin();
@@ -315,13 +337,6 @@ function updateResponsiveSizes() {
   // 固定头部高度
   const topH = topBar.offsetHeight + 4; // margin-bottom
   const themeH = themePanel.offsetHeight;
-  
-  // 面板间距 (top -> theme -> board -> hand) = 3 gaps? No, 结构是 top -> (board, theme, hand)
-  // 其实结构是 .app -> .top-bar, .game -> (.board-panel, .theme-panel, .hand-panel)
-  // game gap is 4px. 
-  // boardPanel, themePanel, handPanel are flex items in .game
-  // Total vertical gaps in .game: (3 items - 1) * 4px = 8px.
-  // 还有 .game 自身的 margin/padding? .game flex:1.
   
   const gameGap = 4;
   const totalFixedH = appPadV + topH + themeH + gameGap * 2;
@@ -371,13 +386,9 @@ function updateResponsiveSizes() {
     const handCols = Math.floor((handPanelContentW + handGap) / (handCellSize + handGap));
     const handRows = Math.ceil(handCount / Math.max(1, handCols));
     
-    // 修正手牌高度计算，考虑 grid item 实际占用高度
-    // CSS minmax 是 piece-size + 8px.
-    // 我们假设它是正方形格子.
     const handItemH = handCellSize; 
     const handGridH = handRows * handItemH + (handRows - 1) * handGap;
     
-    // 手牌区稍微留点余量，防止计算太极限被截断
     const handPanelH = handGridH + panelOverhead + 4; 
     
     const totalNeeded = boardPanelH + handPanelH;
@@ -416,6 +427,7 @@ function moveOnBoard(targetRow, targetCol) {
   } else {
     state.board[fromCell.row][fromCell.col] = null;
   }
+  updateBoardStatus();
   renderBoard();
   renderHand();
   checkWin();
@@ -426,6 +438,11 @@ function handleDropToCell(row, col) {
   if (!dragState.pieceId || isBlocked(row, col)) {
     setStatus("该格不可放置");
     return;
+  }
+
+  if (state.cellStatus[row][col] === "correct") {
+     setStatus("已完成的区域不可修改");
+     return;
   }
 
   if (isPreset(row, col)) {
@@ -441,7 +458,10 @@ function handleDropToCell(row, col) {
 }
 
 function onPieceTouchStart(event, pieceId, source, meta, element) {
-  if (isPreset(meta?.row, meta?.col)) {
+  const isLocked = isPreset(meta?.row, meta?.col) || 
+                  (source === "board" && state.cellStatus[meta.row][meta.col] === "correct");
+  
+  if (isLocked) {
     event.preventDefault();
     return;
   }
@@ -487,6 +507,7 @@ function onPieceTouchEnd(event) {
     if (fromCell) {
       removeFromBoard(fromCell.row, fromCell.col);
       addToHand(pieceId);
+      updateBoardStatus();
       renderBoard();
       renderHand();
       checkWin();
@@ -835,4 +856,144 @@ function adjustThemesLayout() {
      
      if (getRows() <= 2) break;
   }
+}
+
+function buildSegments(size) {
+  state.segments = [];
+  const { rows, cols } = size;
+
+  // Row segments
+  for (let r = 0; r < rows; r++) {
+    let currentSegment = [];
+    for (let c = 0; c < cols; c++) {
+      if (isBlocked(r, c)) {
+        if (currentSegment.length > 0) {
+          state.segments.push({ type: 'row', cells: currentSegment });
+          currentSegment = [];
+        }
+      } else {
+        currentSegment.push({ r, c });
+      }
+    }
+    if (currentSegment.length > 0) {
+      state.segments.push({ type: 'row', cells: currentSegment });
+    }
+  }
+
+  // Col segments
+  for (let c = 0; c < cols; c++) {
+    let currentSegment = [];
+    for (let r = 0; r < rows; r++) {
+      if (isBlocked(r, c)) {
+        if (currentSegment.length > 0) {
+          state.segments.push({ type: 'col', cells: currentSegment });
+          currentSegment = [];
+        }
+      } else {
+        currentSegment.push({ r, c });
+      }
+    }
+    if (currentSegment.length > 0) {
+      state.segments.push({ type: 'col', cells: currentSegment });
+    }
+  }
+
+  // Pre-calculate topics for each segment
+  state.segments.forEach(seg => {
+    seg.topic = inferSegmentTopic(seg.cells);
+  });
+}
+
+function inferSegmentTopic(cells) {
+  if (!cells || cells.length === 0) return null;
+  
+  // Gather all rules from all cells in segment
+  const ruleSets = cells.map(({r, c}) => {
+    const rule = state.ruleGrid[r]?.[c];
+    if (!rule) return [];
+    return Array.isArray(rule) ? rule : [rule];
+  });
+
+  // Find intersection
+  if (ruleSets.length === 0) return null;
+  let intersection = ruleSets[0];
+  
+  for (let i = 1; i < ruleSets.length; i++) {
+    intersection = intersection.filter(t => ruleSets[i].includes(t));
+  }
+  
+  return intersection.length > 0 ? intersection[0] : null;
+}
+
+function updateBoardStatus() {
+  const { rows, cols } = state.boardSize;
+  const types = state.level.types || [];
+  
+  // Reset status
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      state.cellStatus[r][c] = 'none';
+    }
+  }
+
+  // Iterate each type to determine if it triggers Green or Yellow
+  types.forEach(type => {
+    // 1. Find all required cells for this type
+    const requirements = [];
+    for (let r = 0; r < rows; r++) {
+       for (let c = 0; c < cols; c++) {
+         if (isBlocked(r, c)) continue;
+         const rule = state.ruleGrid[r]?.[c];
+         if (!rule) continue;
+         const expected = Array.isArray(rule) ? rule : [rule];
+         if (expected.includes(type)) {
+           requirements.push({ r, c, expected });
+         }
+       }
+    }
+
+    if (requirements.length === 0) return;
+
+    // 2. Check Green Condition:
+    // For every required cell, the piece MUST match ALL types in expected rule.
+    const greenCondition = requirements.every(({ r, c, expected }) => {
+       const pid = state.board[r][c];
+       if (!pid) return false;
+       const piece = state.piecesById[pid];
+       const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
+       // Strict match: actualTypes must contain ALL of expected
+       return expected.every(t => actualTypes.includes(t));
+    });
+
+    // 3. Check Yellow Condition:
+    // For every required cell, the piece MUST match AT LEAST ONE type in expected rule.
+    // (Actually, checking if it matches `type` itself is implied, but user said "at least one in inner array")
+    // Let's stick to "matches at least one in expected rule".
+    const yellowCondition = requirements.every(({ r, c, expected }) => {
+       const pid = state.board[r][c];
+       if (!pid) return false;
+       const piece = state.piecesById[pid];
+       const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
+       // Partial match: actualTypes must contain AT LEAST ONE of expected
+       return expected.some(t => actualTypes.includes(t));
+    });
+    
+    let status = 'none';
+    if (greenCondition) {
+      status = 'correct';
+    } else if (yellowCondition) {
+      status = 'partial';
+    }
+    
+    if (status !== 'none') {
+       requirements.forEach(({ r, c }) => {
+         const current = state.cellStatus[r][c];
+         if (status === 'correct') {
+            state.cellStatus[r][c] = 'correct';
+         } else if (status === 'partial' && current !== 'correct') {
+            state.cellStatus[r][c] = 'partial';
+         }
+       });
+    }
+  });
 }

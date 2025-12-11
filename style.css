@@ -12,6 +12,7 @@
   --border: #e2e8f0;
   --danger: #dc2626;
   --success: #16a34a;
+  --warning: #eab308; /* 新增黄色 */
   --cell-size: clamp(44px, 12vw, 72px);
   --piece-size: calc(var(--cell-size) - 8px);
   --app-padding: clamp(12px, 4vw, 24px);
@@ -151,6 +152,18 @@ body {
 .cell.highlight {
   border-color: var(--accent);
   background: rgba(34, 197, 94, 0.12);
+}
+
+.cell.correct {
+  background: #dcfce7; /* Green-100 */
+  border-color: var(--success);
+  border-style: solid;
+}
+
+.cell.partial {
+  background: #fef9c3; /* Yellow-100 */
+  border-color: var(--warning);
+  border-style: solid;
 }
 
 .cell.blocked {
