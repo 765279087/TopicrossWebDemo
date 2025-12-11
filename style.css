@@ -260,10 +260,10 @@ select:hover {
     gap: 8px;
   }
   .board-panel {
-    order: 1;
+    /* order: 1; removed to restore DOM order: Board -> Theme -> Hand */
   }
   .hand-panel {
-    order: 2;
+    /* order: 2; removed */
     position: sticky;
     bottom: 0;
     z-index: 5;
