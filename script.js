@@ -23,6 +23,8 @@ const dragState = {
   element: null,
 };
 
+let touchHighlightCell = null;
+
 init();
 
 async function init() {
@@ -246,6 +248,12 @@ function createPiece(pieceId, source, meta) {
     dragState.element = null;
   });
 
+  el.addEventListener(
+    "touchstart",
+    (e) => onPieceTouchStart(e, pieceId, source, meta, el),
+    { passive: false }
+  );
+
   return el;
 }
 
@@ -262,21 +270,7 @@ function onCellDrop(e, cell) {
   cell.classList.remove("highlight");
   const row = Number(cell.dataset.row);
   const col = Number(cell.dataset.col);
-  if (!dragState.pieceId || isBlocked(row, col)) {
-    setStatus("该格不可放置");
-    return;
-  }
-
-  if (isPreset(row, col)) {
-    setStatus("预置棋子不可覆盖");
-    return;
-  }
-
-  if (dragState.source === "hand") {
-    placeFromHand(row, col, dragState.pieceId, dragState.element);
-  } else if (dragState.source === "board") {
-    moveOnBoard(row, col);
-  }
+  handleDropToCell(row, col);
 }
 
 function placeFromHand(row, col, pieceId, element) {
@@ -308,6 +302,115 @@ function moveOnBoard(targetRow, targetCol) {
   renderBoard();
   renderHand();
   checkWin();
+}
+
+function handleDropToCell(row, col) {
+  if (!dragState.pieceId || isBlocked(row, col)) {
+    setStatus("该格不可放置");
+    return;
+  }
+
+  if (isPreset(row, col)) {
+    setStatus("预置棋子不可覆盖");
+    return;
+  }
+
+  if (dragState.source === "hand") {
+    placeFromHand(row, col, dragState.pieceId, dragState.element);
+  } else if (dragState.source === "board") {
+    moveOnBoard(row, col);
+  }
+}
+
+function onPieceTouchStart(event, pieceId, source, meta, element) {
+  if (isPreset(meta?.row, meta?.col)) {
+    event.preventDefault();
+    return;
+  }
+
+  dragState.source = source;
+  dragState.pieceId = pieceId;
+  dragState.fromCell = source === "board" ? { row: meta.row, col: meta.col } : null;
+  dragState.element = element;
+
+  clearTouchHighlight();
+  document.addEventListener("touchmove", onPieceTouchMove, { passive: false });
+  document.addEventListener("touchend", onPieceTouchEnd, { passive: false });
+  document.addEventListener("touchcancel", onPieceTouchCancel, { passive: false });
+}
+
+function onPieceTouchMove(event) {
+  if (!dragState.pieceId) return;
+  event.preventDefault();
+  const touch = event.touches[0];
+  if (!touch) return;
+  const target = document.elementFromPoint(touch.clientX, touch.clientY);
+  const cell = target?.closest?.(".cell");
+  highlightTouchCell(cell);
+}
+
+function onPieceTouchEnd(event) {
+  if (!dragState.pieceId) {
+    cleanupTouchListeners();
+    return;
+  }
+  event.preventDefault();
+  const touch = event.changedTouches?.[0];
+  const target = touch ? document.elementFromPoint(touch.clientX, touch.clientY) : null;
+  const handZone = target?.closest?.("#hand");
+  if (handZone && dragState.source === "board") {
+    const { fromCell, pieceId } = dragState;
+    if (fromCell) {
+      removeFromBoard(fromCell.row, fromCell.col);
+      addToHand(pieceId);
+      renderBoard();
+      renderHand();
+      checkWin();
+    }
+  } else {
+    const cell = target?.closest?.(".cell") || touchHighlightCell;
+    if (cell && !isBlocked(Number(cell.dataset.row), Number(cell.dataset.col))) {
+      const row = Number(cell.dataset.row);
+      const col = Number(cell.dataset.col);
+      handleDropToCell(row, col);
+    }
+  }
+  clearTouchHighlight();
+  cleanupTouchListeners();
+}
+
+function onPieceTouchCancel() {
+  clearTouchHighlight();
+  cleanupTouchListeners();
+}
+
+function highlightTouchCell(cell) {
+  if (touchHighlightCell && touchHighlightCell !== cell) {
+    touchHighlightCell.classList.remove("highlight");
+  }
+  if (cell && !isBlocked(Number(cell.dataset.row), Number(cell.dataset.col))) {
+    cell.classList.add("highlight");
+    touchHighlightCell = cell;
+  } else {
+    touchHighlightCell = null;
+  }
+}
+
+function clearTouchHighlight() {
+  if (touchHighlightCell) {
+    touchHighlightCell.classList.remove("highlight");
+    touchHighlightCell = null;
+  }
+}
+
+function cleanupTouchListeners() {
+  dragState.source = null;
+  dragState.pieceId = null;
+  dragState.fromCell = null;
+  dragState.element = null;
+  document.removeEventListener("touchmove", onPieceTouchMove);
+  document.removeEventListener("touchend", onPieceTouchEnd);
+  document.removeEventListener("touchcancel", onPieceTouchCancel);
 }
 
 function removeFromBoard(row, col) {
