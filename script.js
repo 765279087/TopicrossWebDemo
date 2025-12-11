@@ -101,8 +101,8 @@ function prepareLevel(level) {
 
   buildHand(level);
   applyPreset(level);
-  updateResponsiveSizes();
   renderThemes();
+  updateResponsiveSizes();
   renderBoard();
   renderHand();
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
@@ -300,6 +300,8 @@ function updateResponsiveSizes() {
 
   // 隐藏所有分区标题以确保计算准确
   document.querySelectorAll('.section-title').forEach(el => el.style.display = 'none');
+
+  adjustThemesLayout();
 
   const appEl = document.querySelector('.app');
   const topBar = document.querySelector('.top-bar');
@@ -791,4 +793,46 @@ function normalizeRuleGrid(rules, size) {
     }
     return rowRules;
   });
+}
+
+function adjustThemesLayout() {
+  const themesEl = document.getElementById("themes");
+  if (!themesEl || !themesEl.children.length) return;
+  
+  // 重置样式
+  themesEl.style.fontSize = '';
+  const items = Array.from(themesEl.children);
+  items.forEach(el => {
+    el.style.padding = '';
+  });
+  
+  // 检查行数
+  const getRows = () => {
+    let rows = 0;
+    let lastTop = -9999;
+    for (const item of items) {
+       const top = item.getBoundingClientRect().top;
+       if (top > lastTop + 5) {
+         rows++;
+         lastTop = top;
+       }
+    }
+    return rows;
+  };
+  
+  // 尝试缩小的步骤
+  const steps = [
+     { fs: '', pad: '' }, // 默认
+     { fs: '14px', pad: '6px 8px' },
+     { fs: '12px', pad: '4px 6px' },
+     { fs: '11px', pad: '2px 4px' },
+     { fs: '10px', pad: '2px 2px' }
+  ];
+  
+  for (const step of steps) {
+     if (step.fs) themesEl.style.fontSize = step.fs;
+     if (step.pad) items.forEach(el => el.style.padding = step.pad);
+     
+     if (getRows() <= 2) break;
+  }
 }
