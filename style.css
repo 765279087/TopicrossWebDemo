@@ -80,8 +80,9 @@ body {
 }
 
 .hand-panel {
-  flex: 0 0 auto;
-  /* 移除sticky，因为整个页面不滚动 */
+  flex: 1; /* 让手牌区占据剩余空间，实现"扩大" */
+  display: flex;
+  flex-direction: column;
 }
 
 /* 调整标题栏 */
@@ -101,20 +102,22 @@ body {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 4px; /* 减小间距 */
   justify-content: center;
   padding-bottom: 0;
+  align-content: flex-start;
 }
 
 .theme-item {
   flex: 0 0 auto;
-  padding: 8px 10px;
-  border-radius: 10px;
+  padding: 4px 8px; /* 减小内边距 */
+  border-radius: 8px; /* 稍微减小圆角 */
   border: 1px solid var(--border);
   background: #fff;
   color: var(--text);
   font-weight: 600;
   text-align: center;
+  font-size: 14px; /* 默认更小的字体 */
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
@@ -126,7 +129,7 @@ body {
 
 #board {
   display: grid;
-  gap: clamp(6px, 1.5vw, 10px);
+  gap: 0; /* 去掉间隔 */
   justify-content: center;
   width: 100%;
   max-width: 100%;
@@ -180,8 +183,8 @@ body {
   justify-content: center;
   min-width: var(--piece-size);
   height: var(--piece-size);
-  padding: 8px;
-  border-radius: 12px;
+  padding: 2px; /* 减小 padding 让图片更大 */
+  border-radius: 8px; /* 圆角稍微减小以适应更紧凑的布局 */
   color: #0f172a;
   font-weight: 700;
   font-size: 18px;
@@ -207,11 +210,12 @@ body {
 }
 
 .piece img {
-  width: 100%;
-  height: 100%;
+  width: 110%;
+  height: 110%;
   object-fit: contain;
   pointer-events: none;
   border-radius: 10px;
+  transform: scale(1.1);
 }
 
 .preset {
@@ -274,14 +278,21 @@ body {
     flex-wrap: wrap;
     gap: 8px;
   }
-  .board-panel {
-    /* order: 1; removed to restore DOM order: Board -> Theme -> Hand */
+  .section-title {
+    font-size: 14px;
+    margin-bottom: 8px;
   }
-  .hand-panel {
-    /* order: 2; removed */
-    /* position: sticky; removed */
-    /* bottom: 0; removed */
-    /* z-index: 5; removed */
-    /* box-shadow: ...; removed */
+  .status {
+    font-size: 14px;
+  }
+  .theme-item {
+    font-size: 12px;
+    padding: 2px 6px;
+  }
+  .board-panel, .theme-panel {
+     padding: 6px;
+  }
+  .app {
+    padding: clamp(8px, 2vw, 12px);
   }
 }
