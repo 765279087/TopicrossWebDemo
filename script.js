@@ -12,7 +12,7 @@ const state = {
   boardSize: { rows: 0, cols: 0 },
   hand: [],
   piecesById: {},
-  matchGroupById: {},
+  ruleGrid: [],
   blocked: new Set(),
 };
 
@@ -90,9 +90,7 @@ function prepareLevel(level) {
   state.boardSize = size;
   state.blocked = buildBlockedSet(level, size);
   state.piecesById = buildPiecesFromTypes(level.types || []);
-  state.matchGroupById = Object.fromEntries(
-    (level.rules?.matchGroups || []).map((g) => [g.id, g])
-  );
+  state.ruleGrid = normalizeRuleGrid(level.rules, size);
   state.board = Array.from({ length: size.rows }, () =>
     Array.from({ length: size.cols }, () => null)
   );
@@ -101,7 +99,7 @@ function prepareLevel(level) {
   applyPreset(level);
   renderBoard();
   renderHand();
-  setStatus("拖动手牌到数独区，填满并满足每行每列的匹配组");
+  setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
 }
 
 function applyPreset(level) {
@@ -403,16 +401,12 @@ function checkWin() {
     return false;
   }
 
-  const rowGroup = state.matchGroupById[state.level.rules.rowGroup];
-  const colGroup = state.matchGroupById[state.level.rules.colGroup];
-  const rowsOk = validateLines("row", rowGroup);
-  const colsOk = validateLines("col", colGroup);
-
-  if (rowsOk && colsOk) {
+  const matched = validateBoardWithRules();
+  if (matched) {
     setStatus("恭喜，匹配完成！", true);
     return true;
   }
-  setStatus("匹配未通过，请调整棋子");
+  setStatus("棋子类型与关卡规则不符");
   return false;
 }
 
@@ -427,43 +421,32 @@ function boardFilled() {
   return true;
 }
 
-function validateLines(kind, group) {
-  if (!group) return false;
+function validateBoardWithRules() {
+  const grid = state.ruleGrid || [];
   const { rows, cols } = state.boardSize;
-  if (group.type !== "unique-set") return false;
-  const required = group.required;
-
-  if (kind === "row") {
-    for (let r = 0; r < rows; r += 1) {
-      const line = [];
-      for (let c = 0; c < cols; c += 1) {
-        if (isBlocked(r, c)) continue;
-        line.push(state.board[r][c]);
-      }
-      if (!validateUniqueSet(line, required)) return false;
-    }
-    return true;
-  }
-  if (kind === "col") {
+  if (!Array.isArray(grid) || grid.length !== rows) return false;
+  for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
-      const line = [];
-      for (let r = 0; r < rows; r += 1) {
-        if (isBlocked(r, c)) continue;
-        line.push(state.board[r][c]);
-      }
-      if (!validateUniqueSet(line, required)) return false;
+      if (isBlocked(r, c)) continue;
+      const expected = grid[r]?.[c];
+      if (!expected) return false;
+      const pid = state.board[r][c];
+      if (!pid) return false;
+      const actual = state.piecesById[pid]?.type;
+      if (actual !== expected) return false;
     }
-    return true;
   }
-  return false;
+  return true;
 }
 
-function validateUniqueSet(line, required) {
-  if (line.some((cell) => !cell)) return false;
-  const types = line.map((pid) => state.piecesById[pid]?.type).filter(Boolean);
-  if (types.length !== line.length) return false;
-  if (types.length > required.length) return false;
-  const set = new Set(types);
-  if (set.size !== types.length) return false;
-  return types.every((t) => required.includes(t));
+function normalizeRuleGrid(rules, size) {
+  if (!Array.isArray(rules)) return [];
+  const { rows, cols } = size;
+  return Array.from({ length: rows }, (_, r) => {
+    const rowRules = Array.isArray(rules[r]) ? rules[r].slice(0, cols) : [];
+    while (rowRules.length < cols) {
+      rowRules.push(null);
+    }
+    return rowRules;
+  });
 }
