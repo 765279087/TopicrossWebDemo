@@ -24,6 +24,7 @@ const dragState = {
 };
 
 let touchHighlightCell = null;
+let touchDragClone = null;
 
 init();
 
@@ -40,6 +41,7 @@ async function init() {
   levelSelect.addEventListener("change", (e) => {
     loadLevel(e.target.value);
   });
+  window.addEventListener("resize", () => updateResponsiveSizes());
 }
 
 async function loadLevelList() {
@@ -98,6 +100,7 @@ function prepareLevel(level) {
 
   buildHand(level);
   applyPreset(level);
+  updateResponsiveSizes();
   renderBoard();
   renderHand();
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
@@ -155,8 +158,8 @@ function buildHand(level) {
 function renderBoard() {
   const { rows, cols } = state.boardSize;
   boardEl.innerHTML = "";
-  boardEl.style.gridTemplateColumns = `repeat(${cols}, 72px)`;
-  boardEl.style.gridTemplateRows = `repeat(${rows}, 72px)`;
+  boardEl.style.gridTemplateColumns = `repeat(${cols}, var(--cell-size, 72px))`;
+  boardEl.style.gridTemplateRows = `repeat(${rows}, var(--cell-size, 72px))`;
 
   for (let r = 0; r < rows; r += 1) {
     for (let c = 0; c < cols; c += 1) {
@@ -285,6 +288,27 @@ function placeFromHand(row, col, pieceId, element) {
   checkWin();
 }
 
+function updateResponsiveSizes() {
+  const { cols } = state.boardSize;
+  if (!cols) return;
+  const panel = boardEl.closest(".board-panel");
+  const available =
+    (panel?.clientWidth || window.innerWidth || 0) - 32; // panel padding近似
+  const gap = 8;
+  const maxSize = 72;
+  const minSize = 38;
+  const cellSize = Math.max(
+    minSize,
+    Math.min(maxSize, Math.floor((available - gap * (cols - 1)) / cols))
+  );
+  const pieceSize = Math.max(32, cellSize - 8);
+  const handGap = Math.max(6, Math.min(12, Math.floor(cellSize / 6)));
+
+  document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
+  document.documentElement.style.setProperty("--piece-size", `${pieceSize}px`);
+  document.documentElement.style.setProperty("--hand-gap", `${handGap}px`);
+}
+
 function moveOnBoard(targetRow, targetCol) {
   const { fromCell, pieceId } = dragState;
   if (!fromCell) return;
@@ -333,6 +357,11 @@ function onPieceTouchStart(event, pieceId, source, meta, element) {
   dragState.fromCell = source === "board" ? { row: meta.row, col: meta.col } : null;
   dragState.element = element;
 
+  const touch = event.touches?.[0];
+  if (touch) {
+    createTouchDragClone(element, touch);
+  }
+
   clearTouchHighlight();
   document.addEventListener("touchmove", onPieceTouchMove, { passive: false });
   document.addEventListener("touchend", onPieceTouchEnd, { passive: false });
@@ -344,6 +373,7 @@ function onPieceTouchMove(event) {
   event.preventDefault();
   const touch = event.touches[0];
   if (!touch) return;
+  updateTouchDragPosition(touch);
   const target = document.elementFromPoint(touch.clientX, touch.clientY);
   const cell = target?.closest?.(".cell");
   highlightTouchCell(cell);
@@ -408,9 +438,37 @@ function cleanupTouchListeners() {
   dragState.pieceId = null;
   dragState.fromCell = null;
   dragState.element = null;
+  removeTouchDragClone();
   document.removeEventListener("touchmove", onPieceTouchMove);
   document.removeEventListener("touchend", onPieceTouchEnd);
   document.removeEventListener("touchcancel", onPieceTouchCancel);
+}
+
+function createTouchDragClone(element, touch) {
+  removeTouchDragClone();
+  const rect = element.getBoundingClientRect();
+  const clone = element.cloneNode(true);
+  clone.classList.add("touch-dragging");
+  clone.style.width = `${rect.width}px`;
+  clone.style.height = `${rect.height}px`;
+  clone.style.left = `${touch.clientX - rect.width / 2}px`;
+  clone.style.top = `${touch.clientY - rect.height / 2}px`;
+  document.body.appendChild(clone);
+  touchDragClone = clone;
+}
+
+function updateTouchDragPosition(touch) {
+  if (!touchDragClone) return;
+  const rect = touchDragClone.getBoundingClientRect();
+  touchDragClone.style.left = `${touch.clientX - rect.width / 2}px`;
+  touchDragClone.style.top = `${touch.clientY - rect.height / 2}px`;
+}
+
+function removeTouchDragClone() {
+  if (touchDragClone?.parentNode) {
+    touchDragClone.parentNode.removeChild(touchDragClone);
+  }
+  touchDragClone = null;
 }
 
 function removeFromBoard(row, col) {
