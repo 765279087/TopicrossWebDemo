@@ -224,7 +224,7 @@ function createPiece(pieceId, source, meta) {
   el.draggable = !isPreset(meta?.row, meta?.col);
   const img = document.createElement("img");
   img.src = piece.src;
-  img.alt = piece.type;
+  img.alt = Array.isArray(piece.types) ? piece.types.join("/") : piece.type;
   el.appendChild(img);
 
   el.addEventListener("dragstart", (e) => {
@@ -356,27 +356,39 @@ function buildBlockedSet(level, size) {
 
 function buildPiecesFromTypes(types) {
   const map = {};
-  const pool = [];
-  const seenSrc = new Set();
+  const bySrc = {};
+  let idx = 0;
+
   types.forEach((t) => {
     const list = state.imageMap[t] || [];
     list.forEach((src) => {
       const img = normalizeSrc(src);
-      if (!img || seenSrc.has(img)) return;
-      seenSrc.add(img);
-      pool.push({ type: t, src: img });
+      if (!img) return;
+      if (!bySrc[img]) {
+        const id = `piece::${idx++}`;
+        bySrc[img] = { id, src: img, types: new Set() };
+      }
+      bySrc[img].types.add(t);
     });
   });
-  if (pool.length === 0) return map;
-  pool.forEach((item, idx) => {
-    const id = `${item.type}::${idx}`;
-    map[id] = { id, type: item.type, src: item.src };
+
+  Object.values(bySrc).forEach((item) => {
+    const typeArr = Array.from(item.types);
+    map[item.id] = {
+      id: item.id,
+      src: item.src,
+      type: typeArr[0],
+      types: typeArr,
+    };
   });
+
   return map;
 }
 
 function takeOneFromType(type) {
-  const idx = state.hand.findIndex((pid) => state.piecesById[pid]?.type === type);
+  const idx = state.hand.findIndex((pid) =>
+    (state.piecesById[pid]?.types || []).includes(type)
+  );
   if (idx >= 0) {
     const [pid] = state.hand.splice(idx, 1);
     return pid;
@@ -453,8 +465,11 @@ function validateBoardWithRules() {
       if (!expected) return false;
       const pid = state.board[r][c];
       if (!pid) return false;
-      const actual = state.piecesById[pid]?.type;
-      if (actual !== expected) return false;
+      const piece = state.piecesById[pid];
+      const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
+      const expectedList = Array.isArray(expected) ? expected : [expected];
+      const matched = expectedList.some((t) => actualTypes.includes(t));
+      if (!matched) return false;
     }
   }
   return true;
