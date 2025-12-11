@@ -86,19 +86,19 @@ async function loadLevel(levelId) {
 }
 
 function prepareLevel(level) {
+  const size = deriveBoardSize(level);
+  state.boardSize = size;
+  state.blocked = buildBlockedSet(level, size);
   state.piecesById = buildPiecesFromTypes(level.types || []);
   state.matchGroupById = Object.fromEntries(
     (level.rules?.matchGroups || []).map((g) => [g.id, g])
   );
-  const size = deriveBoardSize(level);
-  state.boardSize = size;
-  state.blocked = buildBlockedSet(level, size);
   state.board = Array.from({ length: size.rows }, () =>
     Array.from({ length: size.cols }, () => null)
   );
 
-  applyPreset(level);
   buildHand(level);
+  applyPreset(level);
   renderBoard();
   renderHand();
   setStatus("拖动手牌到数独区，填满并满足每行每列的匹配组");
@@ -116,7 +116,11 @@ function applyPreset(level) {
       return;
     }
     if (isBlocked(item.row, item.col)) return;
-    const pid = item._pieceId || takeOneFromType(item.type);
+    const presetSrc = normalizeSrc(item.src);
+    const pid =
+      item._pieceId ||
+      takeOneBySrc(presetSrc) ||
+      takeOneFromType(item.type);
     if (pid) state.board[item.row][item.col] = pid;
   });
 }
@@ -124,14 +128,7 @@ function applyPreset(level) {
 function buildHand(level) {
   const ids = Object.keys(state.piecesById);
   state.hand = [...ids];
-  // 预置占用的从手牌移除
-  (level.preset || []).forEach((preset) => {
-    const pid = takeOneFromType(preset.type);
-    if (pid) {
-      preset._pieceId = pid;
-      state.board[preset.row][preset.col] = pid;
-    }
-  });
+  // 先放入全部棋子，预置时再消耗手牌
 }
 
 function renderBoard() {
@@ -149,7 +146,6 @@ function renderBoard() {
       cell.dataset.col = c;
       cell.dataset.occupied = Boolean(state.board[r][c]);
       if (blocked) {
-        cell.textContent = "×";
         boardEl.appendChild(cell);
         continue;
       }
@@ -341,12 +337,21 @@ function buildBlockedSet(level, size) {
 
 function buildPiecesFromTypes(types) {
   const map = {};
+  const pool = [];
+  const seenSrc = new Set();
   types.forEach((t) => {
     const list = state.imageMap[t] || [];
-    list.forEach((src, idx) => {
-      const id = `${t}::${idx}`;
-      map[id] = { id, type: t, src };
+    list.forEach((src) => {
+      const img = normalizeSrc(src);
+      if (!img || seenSrc.has(img)) return;
+      seenSrc.add(img);
+      pool.push({ type: t, src: img });
     });
+  });
+  if (pool.length === 0) return map;
+  pool.forEach((item, idx) => {
+    const id = `${item.type}::${idx}`;
+    map[id] = { id, type: item.type, src: item.src };
   });
   return map;
 }
@@ -358,6 +363,24 @@ function takeOneFromType(type) {
     return pid;
   }
   return null;
+}
+
+function takeOneBySrc(src) {
+  if (!src) return null;
+  const idx = state.hand.findIndex((pid) => state.piecesById[pid]?.src === src);
+  if (idx >= 0) {
+    const [pid] = state.hand.splice(idx, 1);
+    return pid;
+  }
+  return null;
+}
+
+function normalizeSrc(entry) {
+  if (entry === undefined || entry === null) return undefined;
+  if (typeof entry === "number") return `Image/${entry}.png`;
+  const num = Number(entry);
+  if (!Number.isNaN(num) && `${num}` === `${entry}`) return `Image/${num}.png`;
+  return entry;
 }
 
 function isPreset(row, col) {
@@ -439,8 +462,8 @@ function validateUniqueSet(line, required) {
   if (line.some((cell) => !cell)) return false;
   const types = line.map((pid) => state.piecesById[pid]?.type).filter(Boolean);
   if (types.length !== line.length) return false;
-  if (types.length !== required.length) return false;
+  if (types.length > required.length) return false;
   const set = new Set(types);
-  if (set.size !== required.length) return false;
-  return required.every((t) => set.has(t));
+  if (set.size !== types.length) return false;
+  return types.every((t) => required.includes(t));
 }
