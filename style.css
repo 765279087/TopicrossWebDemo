@@ -99,15 +99,15 @@ body {
 .themes {
   display: flex;
   flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px; /* 预留滚动空间 */
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  padding-bottom: 0;
 }
 
 .theme-item {
   flex: 0 0 auto;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--border);
   background: #fff;
