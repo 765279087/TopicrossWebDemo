@@ -295,20 +295,39 @@ function placeFromHand(row, col, pieceId, element) {
 }
 
 function updateResponsiveSizes() {
-  const { cols } = state.boardSize;
-  if (!cols) return;
+  const { cols, rows } = state.boardSize;
+  if (!cols || !rows) return;
+
+  const appPadding = 24; // 估算
+  const topBarHeight = 60; // 估算
+  const themePanelHeight = 80; // 估算
+  const handPanelHeight = 100; // 估算
+  const gaps = 32; // 间距总和
+  
+  const totalVerticalUsed = topBarHeight + themePanelHeight + handPanelHeight + gaps + appPadding * 2;
+  const availableHeight = window.innerHeight - totalVerticalUsed;
+  
   const panel = boardEl.closest(".board-panel");
-  const available =
-    (panel?.clientWidth || window.innerWidth || 0) - 32; // panel padding近似
+  const availableWidth = (panel?.clientWidth || window.innerWidth || 0) - 16; // panel padding
+
   const gap = 8;
-  const maxSize = 72;
-  const minSize = 38;
+  const maxCellSize = 72;
+  const minCellSize = 28; // 允许更小
+
+  // 基于宽度的计算
+  const cellByWidth = Math.floor((availableWidth - gap * (cols - 1)) / cols);
+  
+  // 基于高度的计算
+  const cellByHeight = Math.floor((availableHeight - gap * (rows - 1)) / rows);
+
+  // 取两者较小值
   const cellSize = Math.max(
-    minSize,
-    Math.min(maxSize, Math.floor((available - gap * (cols - 1)) / cols))
+    minCellSize,
+    Math.min(maxCellSize, cellByWidth, cellByHeight)
   );
-  const pieceSize = Math.max(32, cellSize - 8);
-  const handGap = Math.max(6, Math.min(12, Math.floor(cellSize / 6)));
+
+  const pieceSize = Math.max(20, cellSize - 6);
+  const handGap = Math.max(4, Math.min(10, Math.floor(cellSize / 8)));
 
   document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
   document.documentElement.style.setProperty("--piece-size", `${pieceSize}px`);
