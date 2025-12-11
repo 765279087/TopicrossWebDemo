@@ -49,7 +49,7 @@ async function init() {
 
 async function loadLevelList() {
   try {
-    const res = await fetch("levels/index.json");
+    const res = await fetch(`levels/index.json?t=${Date.now()}`);
     const data = await res.json();
     state.levels = data.levels || [];
     levelSelect.innerHTML = "";
@@ -81,7 +81,7 @@ async function loadLevel(levelId) {
   const meta = state.levels.find((l) => l.id === levelId);
   if (!meta) return;
   try {
-    const res = await fetch(`levels/${meta.file}`);
+    const res = await fetch(`levels/${meta.file}?t=${Date.now()}`);
     const level = await res.json();
     state.level = level;
     levelSelect.value = level.id;
@@ -94,6 +94,14 @@ async function loadLevel(levelId) {
 
 function prepareLevel(level) {
   if (window.stopFireworks) window.stopFireworks();
+  
+  // Reset interaction states
+  touchHighlightCell = null;
+  if (touchDragClone) removeTouchDragClone();
+  dragState.source = null;
+  dragState.pieceId = null;
+  dragState.element = null;
+
   const size = deriveBoardSize(level);
   state.boardSize = size;
   state.blocked = buildBlockedSet(level, size);
