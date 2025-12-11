@@ -364,9 +364,12 @@ function updateResponsiveSizes() {
   let high = 80;
   let best = 20;
   
-  // 手牌计算参数
+  // 在手机端强制限制 board 占比，为手牌留空间
+  const isMobile = window.innerWidth <= 900;
+  const maxBoardHeightRatio = isMobile ? 0.55 : 0.8;
+  const minHandRows = isMobile ? 3 : 0; // 手机端希望手牌至少能显示3行的高度（如果不那么多牌也没关系，主要是分配空间）
   const handCount = Math.max(1, state.hand.length);
-  const boardGap = 4;
+  const boardGap = 0; // 去掉棋盘间隔
 
   while (low <= high) {
     const size = Math.floor((low + high) / 2);
@@ -385,10 +388,16 @@ function updateResponsiveSizes() {
     const boardH = rows * size + (rows - 1) * boardGap;
     const boardPanelH = boardH + statusH + panelOverhead;
     
+    // 强制检查棋盘高度限制 (针对手机端优化)
+    if (boardPanelH > availableH * maxBoardHeightRatio) {
+       high = size - 1;
+       continue;
+    }
+    
     // Hand Height
-    const pieceSize = Math.max(16, size - 8);
-    const handGap = 4;
-    const handCellSize = pieceSize + 8; // min-width of grid item
+    const pieceSize = size - 2; // 棋子大小几乎填满格子 (留2px防溢出)
+    const handGap = 0; // 去掉手牌间隔
+    const handCellSize = pieceSize + 4; // 手牌格稍微留一点点余量或者直接紧凑
     
     // 手牌区每行能放多少个？
     const handPanelContentW = appInnerWidth - panelOverhead;
@@ -411,8 +420,8 @@ function updateResponsiveSizes() {
   }
 
   const cellSize = best;
-  const pieceSize = Math.max(16, cellSize - 8);
-  const handGap = 4;
+  const pieceSize = cellSize - 2; // 棋子最大化
+  const handGap = 0; // 手牌无间隔
 
   document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
   document.documentElement.style.setProperty("--piece-size", `${pieceSize}px`);
@@ -854,17 +863,19 @@ function adjustThemesLayout() {
   
   // 尝试缩小的步骤
   const steps = [
-     { fs: '', pad: '' }, // 默认
-     { fs: '14px', pad: '6px 8px' },
-     { fs: '12px', pad: '4px 6px' },
-     { fs: '11px', pad: '2px 4px' },
-     { fs: '10px', pad: '2px 2px' }
+     { fs: '14px', pad: '4px 8px' }, // 默认
+     { fs: '13px', pad: '3px 6px' },
+     { fs: '12px', pad: '2px 5px' },
+     { fs: '11px', pad: '1px 4px' },
+     { fs: '10px', pad: '0px 3px' },
+     { fs: '9px', pad: '0px 2px' }
   ];
   
   for (const step of steps) {
      if (step.fs) themesEl.style.fontSize = step.fs;
      if (step.pad) items.forEach(el => el.style.padding = step.pad);
      
+     // 严格限制在2行以内，如果非常多，甚至允许更小
      if (getRows() <= 2) break;
   }
 }
