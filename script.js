@@ -298,36 +298,99 @@ function updateResponsiveSizes() {
   const { cols, rows } = state.boardSize;
   if (!cols || !rows) return;
 
-  const appPadding = 24; // 估算
-  const topBarHeight = 60; // 估算
-  const themePanelHeight = 80; // 估算
-  const handPanelHeight = 100; // 估算
-  const gaps = 32; // 间距总和
+  // 隐藏所有分区标题以确保计算准确
+  document.querySelectorAll('.section-title').forEach(el => el.style.display = 'none');
+
+  const appEl = document.querySelector('.app');
+  const topBar = document.querySelector('.top-bar');
+  const themePanel = document.querySelector('.theme-panel');
   
-  const totalVerticalUsed = topBarHeight + themePanelHeight + handPanelHeight + gaps + appPadding * 2;
-  const availableHeight = window.innerHeight - totalVerticalUsed;
+  const winHeight = window.innerHeight;
+  const appStyle = getComputedStyle(appEl);
+  const appPadV = parseFloat(appStyle.paddingTop) + parseFloat(appStyle.paddingBottom);
+  const appInnerWidth = appEl.clientWidth - parseFloat(appStyle.paddingLeft) - parseFloat(appStyle.paddingRight);
+
+  // 固定头部高度
+  const topH = topBar.offsetHeight + 4; // margin-bottom
+  const themeH = themePanel.offsetHeight;
   
-  const panel = boardEl.closest(".board-panel");
-  const availableWidth = (panel?.clientWidth || window.innerWidth || 0) - 16; // panel padding
-
-  const gap = 8;
-  const maxCellSize = 72;
-  const minCellSize = 28; // 允许更小
-
-  // 基于宽度的计算
-  const cellByWidth = Math.floor((availableWidth - gap * (cols - 1)) / cols);
+  // 面板间距 (top -> theme -> board -> hand) = 3 gaps? No, 结构是 top -> (board, theme, hand)
+  // 其实结构是 .app -> .top-bar, .game -> (.board-panel, .theme-panel, .hand-panel)
+  // game gap is 4px. 
+  // boardPanel, themePanel, handPanel are flex items in .game
+  // Total vertical gaps in .game: (3 items - 1) * 4px = 8px.
+  // 还有 .game 自身的 margin/padding? .game flex:1.
   
-  // 基于高度的计算
-  const cellByHeight = Math.floor((availableHeight - gap * (rows - 1)) / rows);
+  const gameGap = 4;
+  const totalFixedH = appPadV + topH + themeH + gameGap * 2;
+  const availableH = winHeight - totalFixedH;
 
-  // 取两者较小值
-  const cellSize = Math.max(
-    minCellSize,
-    Math.min(maxCellSize, cellByWidth, cellByHeight)
-  );
+  // 面板内边距
+  const panelPadV = 12; // 6px * 2
+  const panelBorder = 2; // 1px * 2
+  const panelOverhead = panelPadV + panelBorder;
 
-  const pieceSize = Math.max(20, cellSize - 6);
-  const handGap = Math.max(4, Math.min(10, Math.floor(cellSize / 8)));
+  // Board Panel 额外开销: .status
+  const statusH = 20; // approx
+  
+  // 查找最佳尺寸
+  let low = 20;
+  let high = 80;
+  let best = 20;
+  
+  // 手牌计算参数
+  const handCount = Math.max(1, state.hand.length);
+  const boardGap = 4;
+
+  while (low <= high) {
+    const size = Math.floor((low + high) / 2);
+    
+    // 1. 检查宽度限制
+    // Board Width
+    const boardW = cols * size + (cols - 1) * boardGap;
+    const boardPanelContentW = appInnerWidth - panelOverhead;
+    if (boardW > boardPanelContentW) {
+      high = size - 1;
+      continue;
+    }
+    
+    // 2. 计算高度需求
+    // Board Height
+    const boardH = rows * size + (rows - 1) * boardGap;
+    const boardPanelH = boardH + statusH + panelOverhead;
+    
+    // Hand Height
+    const pieceSize = Math.max(16, size - 8);
+    const handGap = 4;
+    const handCellSize = pieceSize + 8; // min-width of grid item
+    
+    // 手牌区每行能放多少个？
+    const handPanelContentW = appInnerWidth - panelOverhead;
+    const handCols = Math.floor((handPanelContentW + handGap) / (handCellSize + handGap));
+    const handRows = Math.ceil(handCount / Math.max(1, handCols));
+    
+    // 修正手牌高度计算，考虑 grid item 实际占用高度
+    // CSS minmax 是 piece-size + 8px.
+    // 我们假设它是正方形格子.
+    const handItemH = handCellSize; 
+    const handGridH = handRows * handItemH + (handRows - 1) * handGap;
+    
+    // 手牌区稍微留点余量，防止计算太极限被截断
+    const handPanelH = handGridH + panelOverhead + 4; 
+    
+    const totalNeeded = boardPanelH + handPanelH;
+    
+    if (totalNeeded <= availableH) {
+      best = size;
+      low = size + 1;
+    } else {
+      high = size - 1;
+    }
+  }
+
+  const cellSize = best;
+  const pieceSize = Math.max(16, cellSize - 8);
+  const handGap = 4;
 
   document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
   document.documentElement.style.setProperty("--piece-size", `${pieceSize}px`);
