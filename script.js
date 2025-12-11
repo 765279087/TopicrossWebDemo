@@ -93,6 +93,7 @@ async function loadLevel(levelId) {
 }
 
 function prepareLevel(level) {
+  if (window.stopFireworks) window.stopFireworks();
   const size = deriveBoardSize(level);
   state.boardSize = size;
   state.blocked = buildBlockedSet(level, size);
@@ -766,9 +767,11 @@ function checkWin() {
   const matched = validateBoardWithRules();
   if (matched) {
     setStatus("恭喜，匹配完成！", true);
+    if (window.startFireworks) window.startFireworks();
     return true;
   }
   setStatus("棋子类型与关卡规则不符");
+  if (window.stopFireworks) window.stopFireworks();
   return false;
 }
 
