@@ -966,17 +966,27 @@ function updateBoardStatus() {
     });
 
     // 3. Check Yellow Condition:
-    // For every required cell, the piece MUST match AT LEAST ONE type in expected rule.
-    // (Actually, checking if it matches `type` itself is implied, but user said "at least one in inner array")
-    // Let's stick to "matches at least one in expected rule".
-    const yellowCondition = requirements.every(({ r, c, expected }) => {
+    // 所有棋子匹配类型的交集不为空
+    const matchesList = requirements.map(({ r, c, expected }) => {
        const pid = state.board[r][c];
-       if (!pid) return false;
+       if (!pid) return null;
        const piece = state.piecesById[pid];
        const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
-       // Partial match: actualTypes must contain AT LEAST ONE of expected
-       return expected.some(t => actualTypes.includes(t));
+       
+       // 该棋子能满足当前格子规则中的哪些类型?
+       return actualTypes.filter(t => expected.includes(t));
     });
+
+    let yellowCondition = false;
+    // 如果有任意一个位置没有棋子，或者没有匹配到任何规则类型，则直接不满足
+    if (matchesList.every(m => m && m.length > 0)) {
+        // 求所有 matches 的交集
+        let intersection = matchesList[0];
+        for (let i = 1; i < matchesList.length; i++) {
+            intersection = intersection.filter(t => matchesList[i].includes(t));
+        }
+        yellowCondition = intersection.length > 0;
+    }
     
     let status = 'none';
     if (greenCondition) {
