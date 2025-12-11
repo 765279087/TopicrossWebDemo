@@ -180,7 +180,7 @@ body {
   justify-content: center;
   min-width: var(--piece-size);
   height: var(--piece-size);
-  padding: 0; /* Remove padding to allow image to grow */
+  padding: 8px;
   border-radius: 12px;
   color: #0f172a;
   font-weight: 700;
@@ -190,15 +190,28 @@ body {
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
   user-select: none;
   background: #ffffff;
+  padding: 4px;
+}
+
+.touch-dragging {
+  position: fixed;
+  z-index: 999;
+  pointer-events: none;
+  opacity: 0.92;
+  transform: scale(1.04);
+  touch-action: none;
+}
+
+.piece:active {
+  cursor: grabbing;
 }
 
 .piece img {
-  width: 135%; /* Scale up image */
-  height: 135%; /* Scale up image */
+  width: 100%;
+  height: 100%;
   object-fit: contain;
   pointer-events: none;
   border-radius: 10px;
-  transform: scale(1.3); /* Ensure it scales up visually */
 }
 
 .preset {
