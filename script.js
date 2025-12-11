@@ -3,6 +3,7 @@ const handEl = document.getElementById("hand");
 const statusEl = document.getElementById("status");
 const restartBtn = document.getElementById("restart-btn");
 const levelSelect = document.getElementById("level-select");
+const themesEl = document.getElementById("themes");
 
 const state = {
   levels: [],
@@ -101,6 +102,7 @@ function prepareLevel(level) {
   buildHand(level);
   applyPreset(level);
   updateResponsiveSizes();
+  renderThemes();
   renderBoard();
   renderHand();
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
@@ -218,8 +220,11 @@ function renderHand() {
       renderBoard();
       renderHand();
       checkWin();
+      updateThemeStatus();
     }
   };
+
+  updateThemeStatus();
 }
 
 function createPiece(pieceId, source, meta) {
@@ -286,6 +291,7 @@ function placeFromHand(row, col, pieceId, element) {
   renderBoard();
   renderHand();
   checkWin();
+  updateThemeStatus();
 }
 
 function updateResponsiveSizes() {
@@ -329,6 +335,7 @@ function moveOnBoard(targetRow, targetCol) {
   renderBoard();
   renderHand();
   checkWin();
+  updateThemeStatus();
 }
 
 function handleDropToCell(row, col) {
@@ -399,6 +406,7 @@ function onPieceTouchEnd(event) {
       renderBoard();
       renderHand();
       checkWin();
+      updateThemeStatus();
     }
   } else {
     const cell = target?.closest?.(".cell") || touchHighlightCell;
@@ -472,6 +480,58 @@ function removeTouchDragClone() {
     touchDragClone.parentNode.removeChild(touchDragClone);
   }
   touchDragClone = null;
+}
+
+function renderThemes() {
+  if (!themesEl) return;
+  themesEl.innerHTML = "";
+  const list = state.level?.types || [];
+  list.forEach((type) => {
+    const item = document.createElement("div");
+    item.className = "theme-item";
+    item.dataset.type = type;
+    item.textContent = type;
+    themesEl.appendChild(item);
+  });
+  updateThemeStatus();
+}
+
+function updateThemeStatus() {
+  if (!themesEl || !state.level) return;
+  const types = state.level.types || [];
+  const grid = state.ruleGrid || [];
+  const requirements = {};
+
+  grid.forEach((row, r) => {
+    if (!Array.isArray(row)) return;
+    row.forEach((cell, c) => {
+      if (!cell || isBlocked(r, c)) return;
+      const expectedList = Array.isArray(cell) ? cell : [cell];
+      expectedList.forEach((t) => {
+        if (!requirements[t]) requirements[t] = [];
+        requirements[t].push({ r, c });
+      });
+    });
+  });
+
+  const themeItems = Array.from(themesEl.children);
+  types.forEach((type) => {
+    const positions = requirements[type] || [];
+    const item = themeItems.find((el) => el.dataset.type === type);
+    if (!item) return;
+    if (!positions.length) {
+      item.classList.remove("done");
+      return;
+    }
+    const complete = positions.every(({ r, c }) => {
+      const pid = state.board?.[r]?.[c];
+      if (!pid) return false;
+      const piece = state.piecesById[pid];
+      const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
+      return actualTypes.includes(type);
+    });
+    item.classList.toggle("done", complete);
+  });
 }
 
 function removeFromBoard(row, col) {
