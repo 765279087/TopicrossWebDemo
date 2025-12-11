@@ -319,10 +319,13 @@ function moveOnBoard(targetRow, targetCol) {
   }
 
   const existing = state.board[targetRow][targetCol];
-  if (existing) addToHand(existing);
-
   state.board[targetRow][targetCol] = pieceId;
-  state.board[fromCell.row][fromCell.col] = null;
+  if (existing) {
+    // 交换位置
+    state.board[fromCell.row][fromCell.col] = existing;
+  } else {
+    state.board[fromCell.row][fromCell.col] = null;
+  }
   renderBoard();
   renderHand();
   checkWin();
