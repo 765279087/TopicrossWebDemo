@@ -1,5 +1,6 @@
 {
   "levels": [
-    { "id": "level-1", "name": "第一关", "file": "level1.json" }
+    { "id": "level-1", "name": "第一关", "file": "level1.json" },
+    { "id": "level-2", "name": "第二关", "file": "level2.json" }
   ]
 }
