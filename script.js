@@ -89,7 +89,6 @@ function prepareLevel(level) {
   const size = deriveBoardSize(level);
   state.boardSize = size;
   state.blocked = buildBlockedSet(level, size);
-  state.piecesById = buildPiecesFromTypes(level.types || []);
   state.ruleGrid = normalizeRuleGrid(level.rules, size);
   state.board = Array.from({ length: size.rows }, () =>
     Array.from({ length: size.cols }, () => null)
@@ -124,9 +123,31 @@ function applyPreset(level) {
 }
 
 function buildHand(level) {
-  const ids = Object.keys(state.piecesById);
-  state.hand = [...ids];
-  // 先放入全部棋子，预置时再消耗手牌
+  // 从关卡类型收集所有可用棋子并去重
+  state.piecesById = buildPiecesFromTypes(level.types || []);
+  state.hand = Object.keys(state.piecesById);
+
+  // 预置棋子应当存在于手牌中，先行占用并移除
+  const preset = Array.isArray(level.preset) ? level.preset : [];
+  if (!preset.length) return;
+
+  const { rows, cols } = state.boardSize;
+  preset.forEach((item) => {
+    if (
+      item.row < 0 ||
+      item.row >= rows ||
+      item.col < 0 ||
+      item.col >= cols ||
+      isBlocked(item.row, item.col)
+    ) {
+      return;
+    }
+    const presetSrc = normalizeSrc(item.src);
+    const pid = takeOneBySrc(presetSrc) || takeOneFromType(item.type);
+    if (pid) {
+      item._pieceId = pid;
+    }
+  });
 }
 
 function renderBoard() {
