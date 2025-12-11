@@ -692,7 +692,7 @@ function validateBoardWithRules() {
       const piece = state.piecesById[pid];
       const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
       const expectedList = Array.isArray(expected) ? expected : [expected];
-      const matched = expectedList.some((t) => actualTypes.includes(t));
+      const matched = expectedList.every((t) => actualTypes.includes(t));
       if (!matched) return false;
     }
   }
