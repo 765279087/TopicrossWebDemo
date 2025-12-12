@@ -28,6 +28,7 @@ const dragState = {
 
 let touchHighlightCell = null;
 let touchDragClone = null;
+let isNoHandMode = false;
 
 init();
 
@@ -45,6 +46,31 @@ async function init() {
     loadLevel(e.target.value);
   });
   window.addEventListener("resize", () => updateResponsiveSizes());
+  createModeToggle();
+}
+
+function createModeToggle() {
+  const controls = document.querySelector(".controls");
+  if (!controls) return;
+
+  const label = document.createElement("label");
+  label.style.display = "flex";
+  label.style.alignItems = "center";
+  label.style.marginLeft = "12px";
+  label.style.fontSize = "14px";
+  label.style.cursor = "pointer";
+  label.style.userSelect = "none";
+
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.style.marginRight = "4px";
+  input.addEventListener("change", (e) => {
+    isNoHandMode = e.target.checked;
+  });
+
+  label.appendChild(input);
+  label.appendChild(document.createTextNode("无手牌模式"));
+  controls.appendChild(label);
 }
 
 async function loadLevelList() {
@@ -116,12 +142,50 @@ function prepareLevel(level) {
   buildSegments(size);
   buildHand(level);
   applyPreset(level);
+
+  const handPanel = document.querySelector(".hand-panel");
+  if (isNoHandMode) {
+    if (handPanel) handPanel.style.display = "none";
+    distributeHandToBoard();
+  } else {
+    if (handPanel) handPanel.style.display = "";
+  }
+
   updateBoardStatus(); // 初始化状态
   renderThemes();
   updateResponsiveSizes();
   renderBoard();
   renderHand();
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
+}
+
+function distributeHandToBoard() {
+  const { rows, cols } = state.boardSize;
+  const emptyCells = [];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!isBlocked(r, c) && !state.board[r][c]) {
+        emptyCells.push({ r, c });
+      }
+    }
+  }
+
+  // Shuffle emptyCells
+  for (let i = emptyCells.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
+  }
+
+  // Fill board with hand pieces
+  const pieces = [...state.hand];
+  state.hand = []; // Clear hand
+  
+  pieces.forEach((pid, idx) => {
+    if (idx < emptyCells.length) {
+      const { r, c } = emptyCells[idx];
+      state.board[r][c] = pid;
+    }
+  });
 }
 
 function applyPreset(level) {
@@ -368,7 +432,7 @@ function updateResponsiveSizes() {
   const isMobile = window.innerWidth <= 900;
   const maxBoardHeightRatio = isMobile ? 0.55 : 0.8;
   const minHandRows = isMobile ? 3 : 0; // 手机端希望手牌至少能显示3行的高度（如果不那么多牌也没关系，主要是分配空间）
-  const handCount = Math.max(1, state.hand.length);
+  const handCount = isNoHandMode ? 0 : Math.max(1, state.hand.length);
   const boardGap = 0; // 去掉棋盘间隔
 
   while (low <= high) {
@@ -389,7 +453,9 @@ function updateResponsiveSizes() {
     const boardPanelH = boardH + statusH + panelOverhead;
     
     // 强制检查棋盘高度限制 (针对手机端优化)
-    if (boardPanelH > availableH * maxBoardHeightRatio) {
+    // 如果没有手牌区，棋盘可以用更多空间
+    const limitRatio = isNoHandMode ? 0.9 : maxBoardHeightRatio;
+    if (boardPanelH > availableH * limitRatio) {
        high = size - 1;
        continue;
     }
@@ -407,7 +473,10 @@ function updateResponsiveSizes() {
     const handItemH = handCellSize; 
     const handGridH = handRows * handItemH + (handRows - 1) * handGap;
     
-    const handPanelH = handGridH + panelOverhead + 4; 
+    let handPanelH = 0;
+    if (handRows > 0) {
+      handPanelH = handGridH + panelOverhead + 4; 
+    }
     
     const totalNeeded = boardPanelH + handPanelH;
     
