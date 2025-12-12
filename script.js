@@ -65,6 +65,22 @@ function createThemeToggle() {
   const input = document.createElement("input");
   input.type = "checkbox";
   input.style.marginRight = "4px";
+  
+  // Detect mobile and set default to checked (hidden)
+  const isMobile = window.innerWidth <= 900;
+  if (isMobile) {
+    input.checked = true;
+    // We need to apply the hidden state immediately if checked
+    // Use setTimeout to ensure DOM is ready if needed, or just do it here
+    setTimeout(() => {
+        const themePanel = document.querySelector(".theme-panel");
+        if (themePanel) {
+            themePanel.style.display = "none";
+            updateResponsiveSizes();
+        }
+    }, 0);
+  }
+
   input.addEventListener("change", (e) => {
     const themePanel = document.querySelector(".theme-panel");
     if (themePanel) {
