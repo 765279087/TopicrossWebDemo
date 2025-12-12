@@ -149,6 +149,11 @@ function prepareLevel(level) {
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
+    // Limit hand to 8
+    const maxHand = 8;
+    if (state.hand.length > maxHand) {
+      distributeHandToBoard(state.hand.length - maxHand);
+    }
   }
 
   updateBoardStatus(); // 初始化状态
@@ -159,7 +164,11 @@ function prepareLevel(level) {
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
 }
 
-function distributeHandToBoard() {
+function distributeHandToBoard(count) {
+  // 如果没有指定 count，默认全部
+  if (count === undefined) count = state.hand.length;
+  if (count <= 0) return;
+
   const { rows, cols } = state.boardSize;
   const emptyCells = [];
   for (let r = 0; r < rows; r++) {
@@ -176,14 +185,23 @@ function distributeHandToBoard() {
     [emptyCells[i], emptyCells[j]] = [emptyCells[j], emptyCells[i]];
   }
 
-  // Fill board with hand pieces
-  const pieces = [...state.hand];
-  state.hand = []; // Clear hand
-  
-  pieces.forEach((pid, idx) => {
+  // Shuffle hand array
+  for (let i = state.hand.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.hand[i], state.hand[j]] = [state.hand[j], state.hand[i]];
+  }
+
+  // 取出前 count 个用于分配
+  const piecesToDistribute = state.hand.splice(0, count);
+
+  // Fill board with selected pieces
+  piecesToDistribute.forEach((pid, idx) => {
     if (idx < emptyCells.length) {
       const { r, c } = emptyCells[idx];
       state.board[r][c] = pid;
+    } else {
+      // 如果放不下，放回手牌
+      state.hand.push(pid);
     }
   });
 }
