@@ -193,7 +193,6 @@ body {
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
   user-select: none;
   background: #ffffff;
-  padding: 4px;
 }
 
 .touch-dragging {
@@ -215,7 +214,7 @@ body {
   object-fit: contain;
   pointer-events: none;
   border-radius: 10px;
-  transform: scale(1.1);
+  transform: scale(1.2);
 }
 
 .preset {
