@@ -89,7 +89,36 @@ body {
 .top-bar {
   flex: 0 0 auto;
   margin-bottom: 8px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
 }
+
+.title {
+  font-size: 18px;
+  font-weight: bold;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.controls {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  overflow-x: auto; /* 允许在极小屏幕下横向滚动而不是换行 */
+  scrollbar-width: none; /* Firefox */
+}
+
+.controls::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
 
 
 .section-title {
@@ -267,16 +296,6 @@ body {
 }
 
 @media (max-width: 900px) {
-  .top-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .controls {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
   .section-title {
     font-size: 14px;
     margin-bottom: 8px;
@@ -293,5 +312,10 @@ body {
   }
   .app {
     padding: clamp(8px, 2vw, 12px);
+  }
+  
+  /* 移动端调整标题大小以防挤压 */
+  .title {
+    font-size: 16px;
   }
 }

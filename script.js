@@ -47,6 +47,35 @@ async function init() {
   });
   window.addEventListener("resize", () => updateResponsiveSizes());
   createModeToggle();
+  createThemeToggle();
+}
+
+function createThemeToggle() {
+  const controls = document.querySelector(".controls");
+  if (!controls) return;
+
+  const label = document.createElement("label");
+  label.style.display = "flex";
+  label.style.alignItems = "center";
+  label.style.fontSize = "14px";
+  label.style.cursor = "pointer";
+  label.style.userSelect = "none";
+  label.style.whiteSpace = "nowrap";
+
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.style.marginRight = "4px";
+  input.addEventListener("change", (e) => {
+    const themePanel = document.querySelector(".theme-panel");
+    if (themePanel) {
+      themePanel.style.display = e.target.checked ? "none" : "";
+      updateResponsiveSizes();
+    }
+  });
+
+  label.appendChild(input);
+  label.appendChild(document.createTextNode("隐藏主题区"));
+  controls.appendChild(label);
 }
 
 function createModeToggle() {
@@ -56,10 +85,10 @@ function createModeToggle() {
   const label = document.createElement("label");
   label.style.display = "flex";
   label.style.alignItems = "center";
-  label.style.marginLeft = "12px";
   label.style.fontSize = "14px";
   label.style.cursor = "pointer";
   label.style.userSelect = "none";
+  label.style.whiteSpace = "nowrap";
 
   const input = document.createElement("input");
   input.type = "checkbox";
