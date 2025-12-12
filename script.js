@@ -67,7 +67,7 @@ async function loadLevelList() {
 
 async function loadImageMap() {
   try {
-    const res = await fetch("Image/image-map.json");
+    const res = await fetch(`image/image-map.json?t=${Date.now()}`);
     const data = await res.json();
     state.imageMap = data || {};
   } catch (err) {
@@ -755,9 +755,9 @@ function takeOneBySrc(src) {
 
 function normalizeSrc(entry) {
   if (entry === undefined || entry === null) return undefined;
-  if (typeof entry === "number") return `Image/${entry}.png`;
+  if (typeof entry === "number") return `image/${entry}.png`;
   const num = Number(entry);
-  if (!Number.isNaN(num) && `${num}` === `${entry}`) return `Image/${num}.png`;
+  if (!Number.isNaN(num) && `${num}` === `${entry}`) return `image/${num}.png`;
   return entry;
 }
 
