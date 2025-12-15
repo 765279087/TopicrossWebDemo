@@ -121,10 +121,17 @@ body {
   transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
-.theme-item.done {
+.theme-item.done,
+.theme-item.correct {
   background: #dcfce7;
   color: #15803d;
   border-color: #86efac;
+}
+
+.theme-item.partial {
+  background: #fef9c3;
+  color: #854d0e;
+  border-color: #eab308;
 }
 
 #board {

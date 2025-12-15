@@ -17,6 +17,7 @@ const state = {
   blocked: new Set(),
   segments: [], // 存储所有行/列片段
   cellStatus: [], // 存储每个格子的状态: 'none', 'partial', 'correct'
+  themeStatus: {}, // 存储每个主题的状态: 'none', 'partial', 'correct'
 };
 
 const dragState = {
@@ -700,7 +701,7 @@ function renderThemes() {
     const item = document.createElement("div");
     item.className = "theme-item";
     item.dataset.type = type;
-    item.textContent = type;
+    item.textContent = "?";
     themesEl.appendChild(item);
   });
   updateThemeStatus();
@@ -708,39 +709,22 @@ function renderThemes() {
 
 function updateThemeStatus() {
   if (!themesEl || !state.level) return;
-  const types = state.level.types || [];
-  const grid = state.ruleGrid || [];
-  const requirements = {};
-
-  grid.forEach((row, r) => {
-    if (!Array.isArray(row)) return;
-    row.forEach((cell, c) => {
-      if (!cell || isBlocked(r, c)) return;
-      const expectedList = Array.isArray(cell) ? cell : [cell];
-      expectedList.forEach((t) => {
-        if (!requirements[t]) requirements[t] = [];
-        requirements[t].push({ r, c });
-      });
-    });
-  });
-
+  
   const themeItems = Array.from(themesEl.children);
-  types.forEach((type) => {
-    const positions = requirements[type] || [];
-    const item = themeItems.find((el) => el.dataset.type === type);
-    if (!item) return;
-    if (!positions.length) {
-      item.classList.remove("done");
-      return;
+  themeItems.forEach((item) => {
+    const type = item.dataset.type;
+    const status = state.themeStatus[type] || 'none';
+    
+    item.classList.remove("correct", "partial", "done");
+    if (status === 'correct') {
+        item.classList.add("correct");
+        item.textContent = type;
+    } else if (status === 'partial') {
+        item.classList.add("partial");
+        item.textContent = type;
+    } else {
+        item.textContent = "?";
     }
-    const complete = positions.every(({ r, c }) => {
-      const pid = state.board?.[r]?.[c];
-      if (!pid) return false;
-      const piece = state.piecesById[pid];
-      const actualTypes = piece?.types || (piece?.type ? [piece.type] : []);
-      return actualTypes.includes(type);
-    });
-    item.classList.toggle("done", complete);
   });
 }
 
@@ -1061,7 +1045,10 @@ function updateBoardStatus() {
        }
     }
 
-    if (requirements.length === 0) return;
+    if (requirements.length === 0) {
+      state.themeStatus[type] = 'none';
+      return;
+    }
 
     // 2. Check Green Condition:
     // For every required cell, the piece MUST match ALL types in expected rule.
@@ -1103,6 +1090,9 @@ function updateBoardStatus() {
     } else if (yellowCondition) {
       status = 'partial';
     }
+
+    // Save theme status
+    state.themeStatus[type] = status;
     
     if (status !== 'none') {
        requirements.forEach(({ r, c }) => {
