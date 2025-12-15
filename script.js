@@ -575,19 +575,35 @@ function updateResponsiveSizes() {
     // 双行：2倍棋子高度 + 24(垂直padding) + handGap
     finalHandHeight = finalHandPieceSize * 2 + 24 + handGap;
     if (handEl) {
-        handEl.style.flexWrap = "wrap";
-        handEl.style.overflowX = "hidden";
-        handEl.style.overflowY = "auto";
-        handEl.style.alignContent = "flex-start";
+        // 使用 Grid 布局实现双行且左右滑动 (column flow)
+        handEl.style.display = "grid";
+        handEl.style.gridTemplateRows = `repeat(2, ${finalHandPieceSize}px)`;
+        handEl.style.gridAutoFlow = "column";
+        handEl.style.gap = `${handGap}px`;
+        
+        handEl.style.overflowX = "auto";
+        handEl.style.overflowY = "hidden";
+        
+        // 清除 Flex 相关的样式
+        handEl.style.flexWrap = "";
+        handEl.style.alignContent = "";
     }
   } else {
     // 单行
     finalHandHeight = finalHandPieceSize + 24; // padding
     if (handEl) {
+        // 恢复 Flex 布局
+        handEl.style.display = "flex";
         handEl.style.flexWrap = "nowrap";
+        
         handEl.style.overflowX = "auto";
         handEl.style.overflowY = "hidden";
         handEl.style.alignContent = "";
+        
+        // 清除 Grid 相关的样式
+        handEl.style.gridTemplateRows = "";
+        handEl.style.gridAutoFlow = "";
+        handEl.style.gap = "";
     }
   }
 
