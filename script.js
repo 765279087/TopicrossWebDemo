@@ -18,6 +18,7 @@ const state = {
   segments: [], // 存储所有行/列片段
   cellStatus: [], // 存储每个格子的状态: 'none', 'partial', 'correct'
   themeStatus: {}, // 存储每个主题的状态: 'none', 'partial', 'correct'
+  moveCount: 0,
 };
 
 const dragState = {
@@ -237,7 +238,34 @@ function prepareLevel(level) {
   updateResponsiveSizes();
   renderBoard();
   renderHand();
+  
+  state.moveCount = 0;
+  updateTitle();
+
   setStatus("拖动手牌到棋盘，并让类型与规则网格一致");
+}
+
+function updateTitle() {
+  const titleEl = document.querySelector(".title");
+  if (titleEl) {
+    titleEl.textContent = `Topicross Demo - 步数: ${state.moveCount}`;
+  }
+}
+
+function onMoveSuccess() {
+  state.moveCount++;
+  updateTitle();
+}
+
+function moveBoardToHand(row, col, pieceId) {
+  removeFromBoard(row, col);
+  addToHand(pieceId);
+  updateBoardStatus();
+  renderBoard();
+  renderHand();
+  checkWin();
+  updateThemeStatus();
+  onMoveSuccess();
 }
 
 function distributeHandToBoard(count) {
@@ -386,6 +414,16 @@ function renderHand() {
     handEl.appendChild(pieceEl);
   });
 
+  // 当手牌为空时隐藏手牌区（仅在非无手牌模式下）
+  const handPanel = document.querySelector(".hand-panel");
+  if (handPanel && !isNoHandMode) {
+    if (state.hand.length === 0) {
+      handPanel.style.display = "none";
+    } else {
+      handPanel.style.display = "";
+    }
+  }
+
   handEl.ondragover = (e) => {
     if (dragState.source === "board") {
       e.preventDefault();
@@ -397,13 +435,7 @@ function renderHand() {
     handEl.classList.remove("highlight");
     if (dragState.source === "board") {
       e.preventDefault();
-      removeFromBoard(dragState.fromCell.row, dragState.fromCell.col);
-      addToHand(dragState.pieceId);
-      updateBoardStatus();
-      renderBoard();
-      renderHand();
-      checkWin();
-      updateThemeStatus();
+      moveBoardToHand(dragState.fromCell.row, dragState.fromCell.col, dragState.pieceId);
     }
   };
 
@@ -481,6 +513,7 @@ function placeFromHand(row, col, pieceId, element) {
   renderHand();
   checkWin();
   updateThemeStatus();
+  onMoveSuccess();
 }
 
 function updateResponsiveSizes() {
@@ -638,6 +671,7 @@ function moveOnBoard(targetRow, targetCol) {
   renderHand();
   checkWin();
   updateThemeStatus();
+  onMoveSuccess();
 }
 
 function handleDropToCell(row, col) {
@@ -782,13 +816,7 @@ function onPieceTouchEnd(event) {
   if (handZone && dragState.source === "board") {
     const { fromCell, pieceId } = dragState;
     if (fromCell) {
-      removeFromBoard(fromCell.row, fromCell.col);
-      addToHand(pieceId);
-      updateBoardStatus();
-      renderBoard();
-      renderHand();
-      checkWin();
-      updateThemeStatus();
+      moveBoardToHand(fromCell.row, fromCell.col, pieceId);
     }
   } else {
     const cell = target?.closest?.(".cell") || touchHighlightCell;
