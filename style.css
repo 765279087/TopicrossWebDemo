@@ -12,9 +12,11 @@
   --border: #e2e8f0;
   --danger: #dc2626;
   --success: #16a34a;
-  --warning: #eab308; /* 新增黄色 */
-  --cell-size: clamp(44px, 12vw, 72px);
+  --warning: #eab308;
+  --cell-size: 64px; /* JS会动态更新，这里给个初始值 */
   --piece-size: calc(var(--cell-size) - 8px);
+  --hand-piece-size: 64px; /* 手牌区独立的棋子大小 */
+  --hand-height: 100px;    /* 手牌区固定高度 */
   --app-padding: clamp(12px, 4vw, 24px);
 }
 
@@ -240,7 +242,7 @@ body {
   padding: 8px 4px;
   align-items: center;
   justify-content: flex-start; /* 左对齐，配合滚动 */
-  height: calc(var(--piece-size) + 24px); /* 限制高度，留出滚动条空间或内边距 */
+  height: 100%; /* 填满父容器 */
   width: 100%;
   /* 隐藏滚动条但保留滚动功能 (Chrome/Safari/Webkit) */
   scrollbar-width: none; /* Firefox */
@@ -249,15 +251,23 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+#hand .piece {
+  min-width: var(--hand-piece-size);
+  width: var(--hand-piece-size);
+  height: var(--hand-piece-size);
+}
+
 #hand::-webkit-scrollbar {
   display: none;
 }
 
 .hand-panel {
-  flex: 0 0 auto; /* 不再占据剩余空间，而是根据内容自适应高度 */
+  flex: 0 0 auto; /* 改为固定/自适应高度，不再占满剩余 */
   display: flex;
   flex-direction: column;
   max-width: 100%;
+  height: var(--hand-height);
+  overflow: hidden;
 }
 
 
