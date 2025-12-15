@@ -150,8 +150,8 @@ function prepareLevel(level) {
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
-    // Limit hand to 8
-    const maxHand = 8;
+    // Limit hand to 12
+    const maxHand = 12;
     if (state.hand.length > maxHand) {
       distributeHandToBoard(state.hand.length - maxHand);
     }
@@ -484,13 +484,11 @@ function updateResponsiveSizes() {
     const handGap = 0; // 去掉手牌间隔
     const handCellSize = pieceSize + 4; // 手牌格稍微留一点点余量或者直接紧凑
     
-    // 手牌区每行能放多少个？
-    const handPanelContentW = appInnerWidth - panelOverhead;
-    const handCols = Math.floor((handPanelContentW + handGap) / (handCellSize + handGap));
-    const handRows = Math.ceil(handCount / Math.max(1, handCols));
+    // 手牌区现在固定为一行 (如果有手牌)
+    const handRows = handCount > 0 ? 1 : 0;
     
     const handItemH = handCellSize; 
-    const handGridH = handRows * handItemH + (handRows - 1) * handGap;
+    const handGridH = handRows * handItemH + (handRows > 0 ? 16 : 0); // 16px buffer for padding/scroll
     
     let handPanelH = 0;
     if (handRows > 0) {

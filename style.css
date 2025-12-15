@@ -80,7 +80,7 @@ body {
 }
 
 .hand-panel {
-  flex: 1; /* 让手牌区占据剩余空间，实现"扩大" */
+  flex: 0 0 auto; /* 改为固定/自适应高度，不再占满剩余 */
   display: flex;
   flex-direction: column;
 }
@@ -189,6 +189,7 @@ body {
   align-items: center;
   justify-content: center;
   min-width: var(--piece-size);
+  width: var(--piece-size); /* 确保宽度固定 */
   height: var(--piece-size);
   padding: 2px; /* 减小 padding 让图片更大 */
   border-radius: 8px; /* 圆角稍微减小以适应更紧凑的布局 */
@@ -200,6 +201,7 @@ body {
   box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
   user-select: none;
   background: transparent; /* 改为透明背景 */
+  flex-shrink: 0; /* 防止被压缩 */
 }
 
 .touch-dragging {
@@ -229,16 +231,35 @@ body {
 }
 
 #hand {
-  display: grid;
-  grid-template-columns: repeat(
-    auto-fit,
-    minmax(calc(var(--piece-size) + 8px), 1fr)
-  );
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
   gap: var(--hand-gap, 10px);
   padding: 8px 4px;
-  justify-items: center;
   align-items: center;
+  justify-content: flex-start; /* 左对齐，配合滚动 */
+  height: calc(var(--piece-size) + 24px); /* 限制高度，留出滚动条空间或内边距 */
+  width: 100%;
+  /* 隐藏滚动条但保留滚动功能 (Chrome/Safari/Webkit) */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  /* 让滚动更平滑 */
+  -webkit-overflow-scrolling: touch;
 }
+
+#hand::-webkit-scrollbar {
+  display: none;
+}
+
+.hand-panel {
+  flex: 0 0 auto; /* 不再占据剩余空间，而是根据内容自适应高度 */
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
 
 .status {
   margin-top: 12px;
