@@ -225,7 +225,7 @@ body {
   object-fit: contain;
   pointer-events: none;
   border-radius: 10px;
-  transform: scale(1.2);
+  transform: scale(1);
 }
 
 .preset {
