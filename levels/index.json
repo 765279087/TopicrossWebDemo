@@ -6,6 +6,11 @@
       "id": "level-3",
       "name": "第三关",
       "file": "level3.json"
+    },
+    {
+      "id": "level-4",
+      "name": "第四关",
+      "file": "level4.json"
     }
   ]
 }
