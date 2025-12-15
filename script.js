@@ -32,6 +32,7 @@ let touchDragClone = null;
 let isNoHandMode = false;
 let isDoubleHandRowMode = false;
 let isLimitHandScroll = false;
+let isShowTags = false;
 let touchStartPos = null;
 let pendingDragState = null;
 
@@ -119,6 +120,26 @@ function createModeToggle() {
   labelLimitScroll.appendChild(inputLimitScroll);
   labelLimitScroll.appendChild(document.createTextNode("限制手牌槽滑动"));
   controls.appendChild(labelLimitScroll);
+
+  // 显示标签内容开关
+  const labelShowTags = document.createElement("label");
+  labelShowTags.style.display = "flex";
+  labelShowTags.style.alignItems = "center";
+  labelShowTags.style.fontSize = "14px";
+  labelShowTags.style.cursor = "pointer";
+  labelShowTags.style.userSelect = "none";
+
+  const inputShowTags = document.createElement("input");
+  inputShowTags.type = "checkbox";
+  inputShowTags.style.marginRight = "4px";
+  inputShowTags.checked = isShowTags;
+  inputShowTags.addEventListener("change", (e) => {
+    isShowTags = e.target.checked;
+  });
+
+  labelShowTags.appendChild(inputShowTags);
+  labelShowTags.appendChild(document.createTextNode("显示标签内容"));
+  controls.appendChild(labelShowTags);
 }
 
 async function loadLevelList() {
@@ -855,7 +876,7 @@ function renderThemes() {
     const item = document.createElement("div");
     item.className = "theme-item";
     item.dataset.type = type;
-    item.textContent = "?";
+    item.textContent = isShowTags ? type : "?";
     themesEl.appendChild(item);
   });
   updateThemeStatus();
@@ -877,7 +898,7 @@ function updateThemeStatus() {
         item.classList.add("partial");
         item.textContent = type;
     } else {
-        item.textContent = "?";
+        item.textContent = isShowTags ? type : "?";
     }
   });
 }
