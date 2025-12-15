@@ -214,7 +214,8 @@ function prepareLevel(level) {
 
   const handPanel = document.querySelector(".hand-panel");
   if (isNoHandMode) {
-    if (handPanel) handPanel.style.display = "none";
+    // 即使无手牌模式，也保留手牌区显示，只是清空手牌
+    if (handPanel) handPanel.style.display = "";
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
@@ -570,12 +571,12 @@ function updateResponsiveSizes() {
   
   let handPieceSize = maxHandPieceH;
   const targetHandPieceSize = Math.floor(appInnerWidth / 6.5);
-  const finalHandPieceSize = Math.min(targetHandPieceSize, 100); 
+  const finalHandPieceSize = Math.min(targetHandPieceSize, 100) * 0.8; // 缩小 20%
   
   let finalHandHeight;
   if (isDoubleHandRowMode) {
-    // 双行：2倍棋子高度 + 24(垂直padding) + handGap
-    finalHandHeight = finalHandPieceSize * 2 + 24 + handGap;
+    // 双行：2倍棋子高度 + 16(垂直padding) + handGap
+    finalHandHeight = finalHandPieceSize * 2 + 16 + handGap;
     if (handEl) {
         // 使用 Grid 布局实现双行且左右滑动 (column flow)
         handEl.style.display = "grid";
@@ -592,7 +593,7 @@ function updateResponsiveSizes() {
     }
   } else {
     // 单行
-    finalHandHeight = finalHandPieceSize + 24; // padding
+    finalHandHeight = finalHandPieceSize + 16; // padding
     if (handEl) {
         // 恢复 Flex 布局
         handEl.style.display = "flex";
