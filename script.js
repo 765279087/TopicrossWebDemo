@@ -30,6 +30,8 @@ const dragState = {
 let touchHighlightCell = null;
 let touchDragClone = null;
 let isNoHandMode = false;
+let touchStartPos = null;
+let pendingDragState = null;
 
 init();
 
@@ -606,23 +608,87 @@ function onPieceTouchStart(event, pieceId, source, meta, element) {
     return;
   }
 
+  // 手牌区逻辑：延迟判定
+  if (source === "hand") {
+    const touch = event.touches?.[0];
+    if (touch) {
+      touchStartPos = { x: touch.clientX, y: touch.clientY };
+      pendingDragState = { pieceId, source, meta, element };
+      
+      document.addEventListener("touchmove", onPieceTouchMove, { passive: false });
+      document.addEventListener("touchend", onPieceTouchEnd, { passive: false });
+      document.addEventListener("touchcancel", onPieceTouchCancel, { passive: false });
+    }
+    return;
+  }
+
+  // 棋盘逻辑：直接拖动
+  event.preventDefault();
+  startTouchDrag(pieceId, source, meta, element, event);
+}
+
+function startTouchDrag(pieceId, source, meta, element, event) {
   dragState.source = source;
   dragState.pieceId = pieceId;
   dragState.fromCell = source === "board" ? { row: meta.row, col: meta.col } : null;
   dragState.element = element;
 
-  const touch = event.touches?.[0];
+  const touch = event.touches?.[0] || event.changedTouches?.[0];
   if (touch) {
     createTouchDragClone(element, touch);
   }
 
   clearTouchHighlight();
+  
+  document.removeEventListener("touchmove", onPieceTouchMove);
+  document.removeEventListener("touchend", onPieceTouchEnd);
+  document.removeEventListener("touchcancel", onPieceTouchCancel);
+
   document.addEventListener("touchmove", onPieceTouchMove, { passive: false });
   document.addEventListener("touchend", onPieceTouchEnd, { passive: false });
   document.addEventListener("touchcancel", onPieceTouchCancel, { passive: false });
 }
 
 function onPieceTouchMove(event) {
+  // 1. 处理待定状态 (Hand area)
+  if (pendingDragState) {
+    const touch = event.touches[0];
+    if (!touch) return;
+    
+    const dx = touch.clientX - touchStartPos.x;
+    const dy = touch.clientY - touchStartPos.y;
+    
+    // 移动太小，忽略
+    if (Math.abs(dx) < 5 && Math.abs(dy) < 5) return;
+    
+    // 左右移动为主 -> 滚动，取消拖动
+    if (Math.abs(dx) > Math.abs(dy)) {
+      pendingDragState = null;
+      touchStartPos = null;
+      cleanupTouchListeners(); 
+      return; 
+    }
+    
+    // 向上移动 (dy < -5) -> 开始拖动
+    if (dy < -5) {
+      event.preventDefault(); 
+      const { pieceId, source, meta, element } = pendingDragState;
+      pendingDragState = null;
+      touchStartPos = null;
+      startTouchDrag(pieceId, source, meta, element, event);
+      return;
+    }
+    
+    // 其他情况（如下移），暂视为滚动或无效
+    if (dy > 5) {
+        pendingDragState = null;
+        touchStartPos = null;
+        cleanupTouchListeners();
+        return;
+    }
+    return;
+  }
+
   if (!dragState.pieceId) return;
   event.preventDefault();
   const touch = event.touches[0];
@@ -634,6 +700,13 @@ function onPieceTouchMove(event) {
 }
 
 function onPieceTouchEnd(event) {
+  if (pendingDragState) {
+    pendingDragState = null;
+    touchStartPos = null;
+    cleanupTouchListeners();
+    return;
+  }
+
   if (!dragState.pieceId) {
     cleanupTouchListeners();
     return;
@@ -666,6 +739,10 @@ function onPieceTouchEnd(event) {
 }
 
 function onPieceTouchCancel() {
+  if (pendingDragState) {
+    pendingDragState = null;
+    touchStartPos = null;
+  }
   clearTouchHighlight();
   cleanupTouchListeners();
 }
