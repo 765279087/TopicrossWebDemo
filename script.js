@@ -518,56 +518,11 @@ function updateResponsiveSizes() {
   const pieceSize = cellSize - 2; // 棋子最大化
   const handGap = 0; // 手牌无间隔
 
-  // 计算手牌区棋子大小
-  // 要求：屏幕内最多展示 6 个 -> width >= appInnerWidth / 6.5
-  // 同时要小于手牌区高度 (减去 padding)
   const maxHandPieceH = handPanelH - 16; // padding + margin buffer
   const minHandPieceW = appInnerWidth / 6.5; 
-  // 我们希望手牌棋子尽可能大，但不超过高度限制，且不小于“6个”的宽度限制（如果高度允许的话）
-  // 实际上，如果高度允许很大，宽度也会很大。如果高度很小，宽度也会被限制。
-  // 所以主要是 min(heightConstraint, widthConstraint) ? 
-  // 不，piece 是正方形。
-  // sideLength <= maxHandPieceH
-  // sideLength 应该接近 minHandPieceW 吗？
-  // 如果 minHandPieceW > maxHandPieceH，那只能取 maxHandPieceH，此时一行能放下的就多于 6 个了（无法满足“最多 6 个”的视觉要求，但物理受限）
-  // 如果 minHandPieceW < maxHandPieceH，我们可以取 minHandPieceW 吗？可以。
-  // 这样能保证大约 6 个。
-  
-  // 综合逻辑：
-  // 1. 基础大小：尽可能填满高度
-  // 2. 约束：不要小到一行能放下太多（比如 10 个）
   
   let handPieceSize = maxHandPieceH;
-  // 如果按这个高度算，一行能放下几个？
-  const countInRow = appInnerWidth / handPieceSize;
-  if (countInRow < 6) {
-     // 现在的棋子太大了，一行放不下 6 个（比如只能放 3 个）。用户说“最多 6 个”，意思是 <= 6？
-     // “屏幕内手牌区只能展示最多 6 个棋子” -> 这意味着每个棋子要足够宽。
-     // Wait, "at most 6" means visible count <= 6. Which means piece width >= width/6.
-     // So we want piece width to be LARGE.
-     // maxHandPieceH is the max possible size. So using it is correct.
-  } else {
-     // countInRow > 6，说明棋子太小了。
-     // 但受限于高度，我们不能再大了。
-     // 所以只能是 maxHandPieceH。
-  }
-  
-  // 重新审视需求：“屏幕内手牌区只能展示最多 6 个棋子”
-  // 如果我用 maxHandPieceH 导致展示了 10 个，我也没办法，因为高度定死了。
-  // 除非... 只有当“手牌区高度”是自适应的时候，这个限制才有意义。
-  // 但现在手牌区高度是固定的。
-  // 也许用户的意思是：调整手牌区的高度，使得它能容纳的棋子宽度满足这个条件？
-  // 比如：let targetPieceSize = appInnerWidth / 6.5;
-  // 设置 hand-height = targetPieceSize + padding.
-  // 这样就动态调整了手牌区高度。
-  
-  // 但前一个需求说“手牌区拥有固定高度”。
-  // 这两个需求可能有冲突，或者“固定高度”是指“在一次渲染中固定，而不是随内容变”，或者是“在CSS里写死”。
-  // 假设 CSS 里的 100px 是可以调整的。
-  // 我将在 JS 里计算并覆盖 --hand-height。
-  
   const targetHandPieceSize = Math.floor(appInnerWidth / 6.5);
-  // 限制一下最大值，别太离谱（比如平板上）
   const finalHandPieceSize = Math.min(targetHandPieceSize, 100); 
   
   let finalHandHeight;
