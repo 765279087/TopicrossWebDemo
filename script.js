@@ -31,6 +31,7 @@ let touchHighlightCell = null;
 let touchDragClone = null;
 let isNoHandMode = false;
 let isDoubleHandRowMode = false;
+let isLimitHandScroll = false;
 let touchStartPos = null;
 let pendingDragState = null;
 
@@ -61,7 +62,6 @@ function createModeToggle() {
   const labelNoHand = document.createElement("label");
   labelNoHand.style.display = "flex";
   labelNoHand.style.alignItems = "center";
-  labelNoHand.style.marginLeft = "12px";
   labelNoHand.style.fontSize = "14px";
   labelNoHand.style.cursor = "pointer";
   labelNoHand.style.userSelect = "none";
@@ -84,7 +84,6 @@ function createModeToggle() {
   const labelDoubleRow = document.createElement("label");
   labelDoubleRow.style.display = "flex";
   labelDoubleRow.style.alignItems = "center";
-  labelDoubleRow.style.marginLeft = "12px";
   labelDoubleRow.style.fontSize = "14px";
   labelDoubleRow.style.cursor = "pointer";
   labelDoubleRow.style.userSelect = "none";
@@ -100,6 +99,26 @@ function createModeToggle() {
   labelDoubleRow.appendChild(inputDoubleRow);
   labelDoubleRow.appendChild(document.createTextNode("手牌槽双行"));
   controls.appendChild(labelDoubleRow);
+
+  // 限制手牌槽滑动开关
+  const labelLimitScroll = document.createElement("label");
+  labelLimitScroll.style.display = "flex";
+  labelLimitScroll.style.alignItems = "center";
+  labelLimitScroll.style.fontSize = "14px";
+  labelLimitScroll.style.cursor = "pointer";
+  labelLimitScroll.style.userSelect = "none";
+
+  const inputLimitScroll = document.createElement("input");
+  inputLimitScroll.type = "checkbox";
+  inputLimitScroll.style.marginRight = "4px";
+  inputLimitScroll.checked = isLimitHandScroll;
+  inputLimitScroll.addEventListener("change", (e) => {
+    isLimitHandScroll = e.target.checked;
+  });
+
+  labelLimitScroll.appendChild(inputLimitScroll);
+  labelLimitScroll.appendChild(document.createTextNode("限制手牌槽滑动"));
+  controls.appendChild(labelLimitScroll);
 }
 
 async function loadLevelList() {
@@ -178,8 +197,15 @@ function prepareLevel(level) {
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
-    // Limit hand to 12 (or infinity if double row mode)
-    const maxHand = isDoubleHandRowMode ? 9999 : 12;
+    // Limit hand based on scroll restriction setting
+    let maxHand;
+    if (isLimitHandScroll) {
+      // 如果限制滑动：单行6个，双行12个
+      maxHand = isDoubleHandRowMode ? 12 : 6;
+    } else {
+      // 不限制滑动：双行无限，单行12个
+      maxHand = isDoubleHandRowMode ? 9999 : 12;
+    }
     if (state.hand.length > maxHand) {
       distributeHandToBoard(state.hand.length - maxHand);
     }

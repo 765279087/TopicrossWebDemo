@@ -91,6 +91,17 @@ body {
 .top-bar {
   flex: 0 0 auto;
   margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 
@@ -152,18 +163,19 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(148, 163, 184, 0.15); /* 灰色背景提示空位置 */
   transition: border-color 0.2s ease, background 0.2s ease;
   position: relative;
 }
 
 .cell[data-occupied="true"] {
   border-style: solid;
+  background: rgba(255, 255, 255, 0.9); /* 有棋子的格子使用更白的背景 */
 }
 
 .cell.highlight {
   border-color: var(--accent);
-  background: rgba(34, 197, 94, 0.12);
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .cell.correct {
@@ -175,6 +187,11 @@ body {
 .cell.partial {
   background: #fef9c3; /* Yellow-100 */
   border-color: var(--warning);
+  border-style: solid;
+}
+
+.cell.correct[data-occupied="true"],
+.cell.partial[data-occupied="true"] {
   border-style: solid;
 }
 
@@ -306,14 +323,10 @@ body {
 
 @media (max-width: 900px) {
   .top-bar {
-    flex-direction: column;
-    align-items: flex-start;
     gap: 8px;
   }
   .controls {
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
   }
   .section-title {
     font-size: 14px;
