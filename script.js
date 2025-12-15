@@ -30,7 +30,7 @@ const dragState = {
 let touchHighlightCell = null;
 let touchDragClone = null;
 let isNoHandMode = false;
-let isDoubleHandRowMode = localStorage.getItem("sail_topic_double_hand") === "true";
+let isDoubleHandRowMode = false;
 let touchStartPos = null;
 let pendingDragState = null;
 
@@ -94,8 +94,7 @@ function createModeToggle() {
   inputDoubleRow.style.marginRight = "4px";
   inputDoubleRow.checked = isDoubleHandRowMode;
   inputDoubleRow.addEventListener("change", (e) => {
-    localStorage.setItem("sail_topic_double_hand", e.target.checked);
-    // 提示用户刷新，或者我们可以在这里做一些提示，不过按需求“下次刷新游戏的时候”生效，所以只存状态即可
+    isDoubleHandRowMode = e.target.checked;
   });
 
   labelDoubleRow.appendChild(inputDoubleRow);
