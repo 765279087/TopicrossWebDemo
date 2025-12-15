@@ -289,14 +289,7 @@ body {
 
 
 .status {
-  margin-top: 12px;
-  color: var(--muted);
-  min-height: 20px;
-}
-
-.status.win {
-  color: var(--success);
-  font-weight: 700;
+  display: none;
 }
 
 .badge {
