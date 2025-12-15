@@ -30,6 +30,7 @@ const dragState = {
 let touchHighlightCell = null;
 let touchDragClone = null;
 let isNoHandMode = false;
+let isDoubleHandRowMode = localStorage.getItem("sail_topic_double_hand") === "true";
 let touchStartPos = null;
 let pendingDragState = null;
 
@@ -56,24 +57,50 @@ function createModeToggle() {
   const controls = document.querySelector(".controls");
   if (!controls) return;
 
-  const label = document.createElement("label");
-  label.style.display = "flex";
-  label.style.alignItems = "center";
-  label.style.marginLeft = "12px";
-  label.style.fontSize = "14px";
-  label.style.cursor = "pointer";
-  label.style.userSelect = "none";
+  // 无手牌模式开关
+  const labelNoHand = document.createElement("label");
+  labelNoHand.style.display = "flex";
+  labelNoHand.style.alignItems = "center";
+  labelNoHand.style.marginLeft = "12px";
+  labelNoHand.style.fontSize = "14px";
+  labelNoHand.style.cursor = "pointer";
+  labelNoHand.style.userSelect = "none";
 
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.style.marginRight = "4px";
-  input.addEventListener("change", (e) => {
+  const inputNoHand = document.createElement("input");
+  inputNoHand.type = "checkbox";
+  inputNoHand.style.marginRight = "4px";
+  inputNoHand.checked = isNoHandMode;
+  inputNoHand.addEventListener("change", (e) => {
     isNoHandMode = e.target.checked;
+    // 重新加载当前关卡以应用更改
+    if (state.level) loadLevel(state.level.id);
   });
 
-  label.appendChild(input);
-  label.appendChild(document.createTextNode("无手牌模式"));
-  controls.appendChild(label);
+  labelNoHand.appendChild(inputNoHand);
+  labelNoHand.appendChild(document.createTextNode("无手牌模式"));
+  controls.appendChild(labelNoHand);
+
+  // 手牌槽双行开关
+  const labelDoubleRow = document.createElement("label");
+  labelDoubleRow.style.display = "flex";
+  labelDoubleRow.style.alignItems = "center";
+  labelDoubleRow.style.marginLeft = "12px";
+  labelDoubleRow.style.fontSize = "14px";
+  labelDoubleRow.style.cursor = "pointer";
+  labelDoubleRow.style.userSelect = "none";
+
+  const inputDoubleRow = document.createElement("input");
+  inputDoubleRow.type = "checkbox";
+  inputDoubleRow.style.marginRight = "4px";
+  inputDoubleRow.checked = isDoubleHandRowMode;
+  inputDoubleRow.addEventListener("change", (e) => {
+    localStorage.setItem("sail_topic_double_hand", e.target.checked);
+    // 提示用户刷新，或者我们可以在这里做一些提示，不过按需求“下次刷新游戏的时候”生效，所以只存状态即可
+  });
+
+  labelDoubleRow.appendChild(inputDoubleRow);
+  labelDoubleRow.appendChild(document.createTextNode("手牌槽双行"));
+  controls.appendChild(labelDoubleRow);
 }
 
 async function loadLevelList() {
@@ -152,8 +179,8 @@ function prepareLevel(level) {
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
-    // Limit hand to 12
-    const maxHand = 12;
+    // Limit hand to 12 (or infinity if double row mode)
+    const maxHand = isDoubleHandRowMode ? 9999 : 12;
     if (state.hand.length > maxHand) {
       distributeHandToBoard(state.hand.length - maxHand);
     }
@@ -543,7 +570,27 @@ function updateResponsiveSizes() {
   const targetHandPieceSize = Math.floor(appInnerWidth / 6.5);
   // 限制一下最大值，别太离谱（比如平板上）
   const finalHandPieceSize = Math.min(targetHandPieceSize, 100); 
-  const finalHandHeight = finalHandPieceSize + 24; // padding
+  
+  let finalHandHeight;
+  if (isDoubleHandRowMode) {
+    // 双行：2倍棋子高度 + 24(垂直padding) + handGap
+    finalHandHeight = finalHandPieceSize * 2 + 24 + handGap;
+    if (handEl) {
+        handEl.style.flexWrap = "wrap";
+        handEl.style.overflowX = "hidden";
+        handEl.style.overflowY = "auto";
+        handEl.style.alignContent = "flex-start";
+    }
+  } else {
+    // 单行
+    finalHandHeight = finalHandPieceSize + 24; // padding
+    if (handEl) {
+        handEl.style.flexWrap = "nowrap";
+        handEl.style.overflowX = "auto";
+        handEl.style.overflowY = "hidden";
+        handEl.style.alignContent = "";
+    }
+  }
 
   document.documentElement.style.setProperty("--cell-size", `${cellSize}px`);
   document.documentElement.style.setProperty("--piece-size", `${pieceSize}px`);
