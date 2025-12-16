@@ -587,7 +587,8 @@ function updateResponsiveSizes() {
   
   let handPieceSize = maxHandPieceH;
   const targetHandPieceSize = Math.floor(appInnerWidth / 6.5);
-  const finalHandPieceSize = Math.min(targetHandPieceSize, 100); 
+  const baseSize = Math.min(targetHandPieceSize, 100);
+  const finalHandPieceSize = Math.floor(baseSize * 0.9); // 缩小 10% 
   
   let finalHandHeight;
   if (handRowCount > 1) {
