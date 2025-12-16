@@ -907,7 +907,9 @@ function renderThemes() {
     const item = document.createElement("div");
     item.className = "theme-item";
     item.dataset.type = type;
-    item.textContent = isShowTags ? type : "?";
+    // 确保定位上下文，以便在隐藏真实文本时通过绝对定位显示 "?"
+    item.style.position = "relative"; 
+    // 内容由 updateThemeStatus 统一处理
     themesEl.appendChild(item);
   });
   updateThemeStatus();
@@ -922,14 +924,22 @@ function updateThemeStatus() {
     const status = state.themeStatus[type] || 'none';
     
     item.classList.remove("correct", "partial", "done");
-    if (status === 'correct') {
-        item.classList.add("correct");
-        item.textContent = type;
-    } else if (status === 'partial') {
-        item.classList.add("partial");
+    
+    const shouldShowText = isShowTags || status === 'correct' || status === 'partial';
+
+    if (shouldShowText) {
+        if (status === 'correct') {
+            item.classList.add("correct");
+        } else if (status === 'partial') {
+            item.classList.add("partial");
+        }
         item.textContent = type;
     } else {
-        item.textContent = isShowTags ? type : "?";
+        // 即使显示 "?"，也保留真实文本的宽度
+        item.innerHTML = `
+          <span style="visibility:hidden">${type}</span>
+          <span style="position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center;">?</span>
+        `;
     }
   });
 }
