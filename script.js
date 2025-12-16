@@ -338,6 +338,12 @@ function buildHand(level) {
   state.piecesById = buildPiecesFromTypes(level.types || []);
   state.hand = Object.keys(state.piecesById);
 
+  // 随机打乱手牌顺序
+  for (let i = state.hand.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [state.hand[i], state.hand[j]] = [state.hand[j], state.hand[i]];
+  }
+
   // 预置棋子应当存在于手牌中，先行占用并移除
   const preset = Array.isArray(level.preset) ? level.preset : [];
   if (!preset.length) return;
