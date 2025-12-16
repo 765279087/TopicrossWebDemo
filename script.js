@@ -33,6 +33,7 @@ let touchDragClone = null;
 let isNoHandMode = false;
 let handRowCount = 1;
 let isShowTags = false;
+let isThemeBelowBoard = true; // 主题区是否在棋盘下方，默认true
 let touchStartPos = null;
 let pendingDragState = null;
 
@@ -137,6 +138,28 @@ function createModeToggle() {
   labelShowTags.appendChild(inputShowTags);
   labelShowTags.appendChild(document.createTextNode("显示标签内容"));
   controls.appendChild(labelShowTags);
+
+  // 主题区位置开关
+  const labelThemePosition = document.createElement("label");
+  labelThemePosition.style.display = "flex";
+  labelThemePosition.style.alignItems = "center";
+  labelThemePosition.style.fontSize = "14px";
+  labelThemePosition.style.cursor = "pointer";
+  labelThemePosition.style.userSelect = "none";
+
+  const inputThemePosition = document.createElement("input");
+  inputThemePosition.type = "checkbox";
+  inputThemePosition.style.marginRight = "4px";
+  inputThemePosition.checked = isThemeBelowBoard;
+  inputThemePosition.addEventListener("change", (e) => {
+    isThemeBelowBoard = e.target.checked;
+    // 当开关改变时，重新加载当前关卡以应用更改
+    if (state.level) loadLevel(state.level.id);
+  });
+
+  labelThemePosition.appendChild(inputThemePosition);
+  labelThemePosition.appendChild(document.createTextNode("主题区在棋盘下方"));
+  controls.appendChild(labelThemePosition);
 }
 
 async function loadLevelList() {
@@ -218,11 +241,12 @@ function prepareLevel(level) {
   }
 
   updateBoardStatus(); // 初始化状态
+  adjustGameLayout(); // 根据开关状态调整布局
   renderThemes();
   updateResponsiveSizes();
   renderBoard();
   renderHand();
-  
+
   state.moveCount = 0;
   updateTitle();
 
@@ -1026,6 +1050,35 @@ function isPreset(row, col) {
 
 function isBlocked(row, col) {
   return state.blocked.has(`${row},${col}`);
+}
+
+function adjustGameLayout() {
+  const gameEl = document.querySelector('.game');
+  if (!gameEl) return;
+
+  const boardPanel = gameEl.querySelector('.board-panel');
+  const themePanel = gameEl.querySelector('.theme-panel');
+  const handPanel = gameEl.querySelector('.hand-panel');
+
+  if (!boardPanel || !themePanel || !handPanel) return;
+
+  // 清空现有元素
+  while (gameEl.firstChild) {
+    gameEl.removeChild(gameEl.firstChild);
+  }
+
+  // 根据开关状态重新添加元素
+  if (isThemeBelowBoard) {
+    // 主题区在棋盘下方：数独区 → 主题区 → 手牌区
+    gameEl.appendChild(boardPanel);
+    gameEl.appendChild(themePanel);
+    gameEl.appendChild(handPanel);
+  } else {
+    // 主题区在棋盘上方：主题区 → 数独区 → 手牌区
+    gameEl.appendChild(themePanel);
+    gameEl.appendChild(boardPanel);
+    gameEl.appendChild(handPanel);
+  }
 }
 
 function setStatus(msg, isWin = false) {
