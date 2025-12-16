@@ -90,29 +90,23 @@ function createModeToggle() {
   labelHandRows.style.cursor = "pointer";
   labelHandRows.style.userSelect = "none";
 
-  const inputHandRows = document.createElement("input");
-  inputHandRows.type = "number";
-  inputHandRows.min = "1";
-  inputHandRows.max = "6";
+  const inputHandRows = document.createElement("select");
   inputHandRows.style.marginRight = "4px";
   inputHandRows.style.width = "60px";
-  inputHandRows.value = handRowCount;
+
+  // 添加选项 1-6
+  for (let i = 1; i <= 6; i++) {
+    const option = document.createElement("option");
+    option.value = i;
+    option.textContent = i;
+    if (i === handRowCount) {
+      option.selected = true;
+    }
+    inputHandRows.appendChild(option);
+  }
+
   inputHandRows.addEventListener("change", (e) => {
-    const value = parseInt(e.target.value);
-    if (value >= 1 && value <= 6) {
-      handRowCount = value;
-    } else {
-      // 如果输入无效，重置为当前值
-      e.target.value = handRowCount;
-    }
-  });
-  inputHandRows.addEventListener("input", (e) => {
-    const value = parseInt(e.target.value);
-    if (isNaN(value) || value < 1 || value > 6) {
-      e.target.style.borderColor = "red";
-    } else {
-      e.target.style.borderColor = "";
-    }
+    handRowCount = parseInt(e.target.value);
   });
 
   labelHandRows.appendChild(document.createTextNode("手牌槽行数: "));
