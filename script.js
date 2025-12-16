@@ -31,8 +31,7 @@ const dragState = {
 let touchHighlightCell = null;
 let touchDragClone = null;
 let isNoHandMode = false;
-let isDoubleHandRowMode = false;
-let isLimitHandScroll = false;
+let handRowCount = 1;
 let isShowTags = false;
 let touchStartPos = null;
 let pendingDragState = null;
@@ -82,45 +81,42 @@ function createModeToggle() {
   labelNoHand.appendChild(document.createTextNode("无手牌模式"));
   controls.appendChild(labelNoHand);
 
-  // 手牌槽双行开关
-  const labelDoubleRow = document.createElement("label");
-  labelDoubleRow.style.display = "flex";
-  labelDoubleRow.style.alignItems = "center";
-  labelDoubleRow.style.fontSize = "14px";
-  labelDoubleRow.style.cursor = "pointer";
-  labelDoubleRow.style.userSelect = "none";
+  // 手牌槽行数设置
+  const labelHandRows = document.createElement("label");
+  labelHandRows.style.display = "flex";
+  labelHandRows.style.alignItems = "center";
+  labelHandRows.style.fontSize = "14px";
+  labelHandRows.style.cursor = "pointer";
+  labelHandRows.style.userSelect = "none";
 
-  const inputDoubleRow = document.createElement("input");
-  inputDoubleRow.type = "checkbox";
-  inputDoubleRow.style.marginRight = "4px";
-  inputDoubleRow.checked = isDoubleHandRowMode;
-  inputDoubleRow.addEventListener("change", (e) => {
-    isDoubleHandRowMode = e.target.checked;
+  const inputHandRows = document.createElement("input");
+  inputHandRows.type = "number";
+  inputHandRows.min = "1";
+  inputHandRows.max = "6";
+  inputHandRows.style.marginRight = "4px";
+  inputHandRows.style.width = "60px";
+  inputHandRows.value = handRowCount;
+  inputHandRows.addEventListener("change", (e) => {
+    const value = parseInt(e.target.value);
+    if (value >= 1 && value <= 6) {
+      handRowCount = value;
+    } else {
+      // 如果输入无效，重置为当前值
+      e.target.value = handRowCount;
+    }
+  });
+  inputHandRows.addEventListener("input", (e) => {
+    const value = parseInt(e.target.value);
+    if (isNaN(value) || value < 1 || value > 6) {
+      e.target.style.borderColor = "red";
+    } else {
+      e.target.style.borderColor = "";
+    }
   });
 
-  labelDoubleRow.appendChild(inputDoubleRow);
-  labelDoubleRow.appendChild(document.createTextNode("手牌槽双行"));
-  controls.appendChild(labelDoubleRow);
-
-  // 限制手牌槽滑动开关
-  const labelLimitScroll = document.createElement("label");
-  labelLimitScroll.style.display = "flex";
-  labelLimitScroll.style.alignItems = "center";
-  labelLimitScroll.style.fontSize = "14px";
-  labelLimitScroll.style.cursor = "pointer";
-  labelLimitScroll.style.userSelect = "none";
-
-  const inputLimitScroll = document.createElement("input");
-  inputLimitScroll.type = "checkbox";
-  inputLimitScroll.style.marginRight = "4px";
-  inputLimitScroll.checked = isLimitHandScroll;
-  inputLimitScroll.addEventListener("change", (e) => {
-    isLimitHandScroll = e.target.checked;
-  });
-
-  labelLimitScroll.appendChild(inputLimitScroll);
-  labelLimitScroll.appendChild(document.createTextNode("限制手牌槽滑动"));
-  controls.appendChild(labelLimitScroll);
+  labelHandRows.appendChild(document.createTextNode("手牌槽行数: "));
+  labelHandRows.appendChild(inputHandRows);
+  controls.appendChild(labelHandRows);
 
   // 显示标签内容开关
   const labelShowTags = document.createElement("label");
@@ -219,18 +215,6 @@ function prepareLevel(level) {
     distributeHandToBoard();
   } else {
     if (handPanel) handPanel.style.display = "";
-    // Limit hand based on scroll restriction setting
-    let maxHand;
-    if (isLimitHandScroll) {
-      // 如果限制滑动：单行6个，双行12个
-      maxHand = isDoubleHandRowMode ? 12 : 6;
-    } else {
-      // 不限制滑动：双行无限，单行12个
-      maxHand = isDoubleHandRowMode ? 9999 : 12;
-    }
-    if (state.hand.length > maxHand) {
-      distributeHandToBoard(state.hand.length - maxHand);
-    }
   }
 
   updateBoardStatus(); // 初始化状态
@@ -606,19 +590,19 @@ function updateResponsiveSizes() {
   const finalHandPieceSize = Math.min(targetHandPieceSize, 100); 
   
   let finalHandHeight;
-  if (isDoubleHandRowMode) {
-    // 双行：2倍棋子高度 + 24(垂直padding) + handGap
-    finalHandHeight = finalHandPieceSize * 2 + 24 + handGap;
+  if (handRowCount > 1) {
+    // 多行：行数倍棋子高度 + 24(垂直padding) + handGap
+    finalHandHeight = finalHandPieceSize * handRowCount + 24 + handGap;
     if (handEl) {
-        // 使用 Grid 布局实现双行且左右滑动 (column flow)
+        // 使用 Grid 布局实现多行且左右滑动 (column flow)
         handEl.style.display = "grid";
-        handEl.style.gridTemplateRows = `repeat(2, ${finalHandPieceSize}px)`;
+        handEl.style.gridTemplateRows = `repeat(${handRowCount}, ${finalHandPieceSize}px)`;
         handEl.style.gridAutoFlow = "column";
         handEl.style.gap = `${handGap}px`;
-        
+
         handEl.style.overflowX = "auto";
         handEl.style.overflowY = "hidden";
-        
+
         // 清除 Flex 相关的样式
         handEl.style.flexWrap = "";
         handEl.style.alignContent = "";
@@ -630,11 +614,11 @@ function updateResponsiveSizes() {
         // 恢复 Flex 布局
         handEl.style.display = "flex";
         handEl.style.flexWrap = "nowrap";
-        
+
         handEl.style.overflowX = "auto";
         handEl.style.overflowY = "hidden";
         handEl.style.alignContent = "";
-        
+
         // 清除 Grid 相关的样式
         handEl.style.gridTemplateRows = "";
         handEl.style.gridAutoFlow = "";
