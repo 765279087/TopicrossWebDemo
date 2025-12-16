@@ -30,7 +30,7 @@ body {
     var(--bg);
   color: var(--text);
   font-family: "Inter", "PingFang SC", system-ui, -apple-system, sans-serif;
-  /* touch-action: none; 已移除，允许缩放和滚动 */
+  touch-action: none; /* 防止页面整体拖动 */
   -webkit-text-size-adjust: 100%;
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   display: flex;
