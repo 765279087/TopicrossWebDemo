@@ -79,7 +79,6 @@ body {
 
 .theme-panel {
   flex: 0 0 auto;
-  overflow: hidden;
 }
 
 .hand-panel {
@@ -120,8 +119,6 @@ body {
   justify-content: center;
   padding-bottom: 0;
   align-content: flex-start;
-  height: 100%;
-  overflow: hidden;
 }
 
 .theme-item {

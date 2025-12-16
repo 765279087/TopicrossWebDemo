@@ -527,17 +527,9 @@ function updateResponsiveSizes() {
 
   adjustThemesLayout();
 
-  // 固定主题区高度，防止状态变化时高度变化
-  const themePanel = document.querySelector('.theme-panel');
-  if (themePanel) {
-    const currentHeight = themePanel.offsetHeight;
-    themePanel.style.height = `${currentHeight}px`;
-    themePanel.style.minHeight = `${currentHeight}px`;
-    themePanel.style.maxHeight = `${currentHeight}px`;
-  }
-
   const appEl = document.querySelector('.app');
   const topBar = document.querySelector('.top-bar');
+  const themePanel = document.querySelector('.theme-panel');
   
   const winHeight = window.innerHeight;
   const appStyle = getComputedStyle(appEl);
