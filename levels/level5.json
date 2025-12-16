@@ -28,7 +28,8 @@
   "preset": [
     { "row": 1, "col": 5, "src": 150 },
     { "row": 5, "col": 3, "src": 151 },
-    { "row": 6, "col": 6, "src": 152 }
+    { "row": 6, "col": 6, "src": 152 },
+    { "row": 4, "col": 6, "src": 135 }
   ],
   "rules": [
       [null, null, ["披萨", "铁质餐厨具"], "披萨", "披萨", ["披萨", "快餐"], null, null],
